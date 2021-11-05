@@ -1,6 +1,7 @@
-from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import (QApplication, QDialog, QGroupBox, QRadioButton, QComboBox,
     QLabel, QVBoxLayout, QGridLayout)
+
+from panel_effectiveness import PanelEffectiveness
 
 import sys
 
@@ -10,11 +11,11 @@ class MainWindow(QDialog):
         self.setWindowTitle("COMP6130 Graduate Group 9 Project")
 
         self.createSidebar()
-        self.createPanel()
+        panel = PanelEffectiveness()
 
         mainLayout = QGridLayout()
         mainLayout.addWidget(self.sidebar, 0, 0)
-        mainLayout.addWidget(self.panel, 0, 1)
+        mainLayout.addWidget(panel, 0, 1)
         self.setLayout(mainLayout)
     
     def createSidebar(self):
@@ -43,18 +44,6 @@ class MainWindow(QDialog):
         layout.addStretch(1)
         layout.addWidget(radioButton4)
         self.sidebar.setLayout(layout)
-
-    def createPanel(self):
-        self.panel = QGroupBox("")
-
-        titleLabel = QLabel("Title")
-        titleFont = QFont()
-        titleFont.setPointSize(24);
-        titleLabel.setFont(titleFont)
-
-        layout = QVBoxLayout()
-        layout.addWidget(titleLabel)
-        self.panel.setLayout(layout)
 
 
 if __name__ == '__main__':
