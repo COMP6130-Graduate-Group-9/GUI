@@ -9,8 +9,8 @@ class PanelEffectiveness(QGroupBox):
         QGroupBox.__init__(self, parent=parent)
 
         self.p = None  # Default empty value.
-
-        titleLabel = QLabel("Effectiveness")
+        
+        titleLabel = QLabel("Privacy")
         titleFont = QFont()
         titleFont.setPointSize(24)
         titleLabel.setFont(titleFont)
@@ -41,7 +41,7 @@ class PanelEffectiveness(QGroupBox):
             self.p.stateChanged.connect(self.handle_state)
             return_path = "../../../../"
             self.p.finished.connect(lambda: self.process_finished(return_path))  # Clean up once complete.
-            os.chdir("algorithms/FedGen/data/Mnist")
+            os.chdir("algorithms/privacy/data/CIFAR10")
             script = "generate_niid_dirichlet.py --n_class 10 --sampling_ratio 0.5 --alpha 0.1 --n_user 20"
             self.p.start(f"{return_path}venv/Scripts/python.exe", script.split(" "))
 
@@ -54,8 +54,8 @@ class PanelEffectiveness(QGroupBox):
             self.p.stateChanged.connect(self.handle_state)
             return_path = "../../"
             self.p.finished.connect(lambda: self.process_finished(return_path))  # Clean up once complete.
-            os.chdir("algorithms/FedGen")
-            script = "main.py --dataset Mnist-alpha0.1-ratio0.5 --algorithm FedGen --batch_size 32 --num_glob_iters 200 --local_epochs 20 --num_users 10 --lamda 1 --learning_rate 0.01 --model cnn --personal_learning_rate 0.01 --times 3"
+            os.chdir("algorithms/privacy")
+            script = "python3 reconstruct_image.py --model ResNet20-4 --dataset CIFAR10 --trained_model --cost_fn sim --indices def --restarts 32 --save_image --target_id -1"
             self.p.start(f"{return_path}venv/Scripts/python.exe", script.split(" "))
 
     def handle_stderr(self):
