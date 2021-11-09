@@ -1,5 +1,6 @@
+from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import (QApplication, QDialog, QGroupBox, QRadioButton, QComboBox,
-    QLabel, QVBoxLayout, QGridLayout)
+    QLabel, QGridLayout, QHBoxLayout)
 
 from panel_effectiveness import PanelEffectiveness
 
@@ -10,40 +11,47 @@ class MainWindow(QDialog):
         super().__init__()
         self.setWindowTitle("COMP6130 Graduate Group 9 Project")
 
-        self.createSidebar()
+        titleLabel = QLabel("Trustworthy Federated Learning")
+        titleFont = QFont()
+        titleFont.setPointSize(24)
+        titleLabel.setFont(titleFont)
+
+        self.createPanelTabs()
+        topLayout = QHBoxLayout()
+        topLayout.addWidget(titleLabel)
+        topLayout.addWidget(self.panelTabs)
+
         panel = PanelEffectiveness()
 
         mainLayout = QGridLayout()
-        mainLayout.addWidget(self.sidebar, 0, 0)
-        mainLayout.addWidget(panel, 0, 1)
+        mainLayout.addLayout(topLayout, 0, 0)
+        mainLayout.addWidget(panel, 1, 0)
         self.setLayout(mainLayout)
     
-    def createSidebar(self):
-        self.sidebar = QGroupBox("")
+    def createPanelTabs(self):
+        self.panelTabs = QGroupBox("")
 
-        radioButton1 = QRadioButton("Effectiveness")
-        radioButton2 = QRadioButton("Privacy")
-        radioButton3 = QRadioButton("Robustness")
-        radioButton4 = QRadioButton("Fairness")
-        radioButton1.setChecked(True)
+        radioButtonEffectiveness = QRadioButton("Effectiveness")
+        radioButtonPrivacy = QRadioButton("Privacy")
+        radioButtonRobustness = QRadioButton("Robustness")
+        radioButtonFairness = QRadioButton("Fairness")
+        radioButtonEffectiveness.setChecked(True)
 
         robustnessComboBox = QComboBox()
         robustnessComboBox.addItems(["Backdoor Attack"])
-
         robustnessLabel = QLabel("&Type:")
         robustnessLabel.setBuddy(robustnessComboBox)
+        robustnessWrapper = QHBoxLayout()
+        robustnessWrapper.addWidget(radioButtonRobustness)
+        robustnessWrapper.addWidget(robustnessLabel)
+        robustnessWrapper.addWidget(robustnessComboBox)
 
-        layout = QVBoxLayout()
-        layout.addWidget(radioButton1)
-        layout.addStretch(1)
-        layout.addWidget(radioButton2)
-        layout.addStretch(1)
-        layout.addWidget(radioButton3)
-        layout.addWidget(robustnessLabel)
-        layout.addWidget(robustnessComboBox)
-        layout.addStretch(1)
-        layout.addWidget(radioButton4)
-        self.sidebar.setLayout(layout)
+        layout = QGridLayout()
+        layout.addWidget(radioButtonEffectiveness, 0, 0)
+        layout.addWidget(radioButtonPrivacy, 1, 0)
+        layout.addLayout(robustnessWrapper, 0, 1)
+        layout.addWidget(radioButtonFairness, 1, 1)
+        self.panelTabs.setLayout(layout)
 
 
 if __name__ == '__main__':
