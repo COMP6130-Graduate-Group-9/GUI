@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import (QWidget, QGridLayout, QSpinBox, QLabel, QHBoxLayout,
-    QComboBox)
+    QComboBox, QDoubleSpinBox)
 
 class ParameterWidget(QWidget):
     def __init__(self):
@@ -7,6 +7,9 @@ class ParameterWidget(QWidget):
 
         self.num_of_clients = 3
         self.dataset = "mnist"
+        self.learning_rate = 0.01
+        self.alpha = 0.1
+        self.total_epochs = 50
 
         grid = QGridLayout()  
         self.setLayout(grid)
@@ -29,8 +32,37 @@ class ParameterWidget(QWidget):
         dataset_box.addWidget(dataset_label)
         dataset_box.addWidget(dataset_input)
 
+        learning_rate_box = QHBoxLayout()
+        learning_rate_input = QDoubleSpinBox()
+        learning_rate_input.setValue(self.learning_rate)
+        learning_rate_input.valueChanged.connect(lambda i: self.value_changed(i, "learning_rate"))
+        learning_rate_label = QLabel("Learning Rate:")
+        learning_rate_label.setBuddy(learning_rate_input)
+        learning_rate_box.addWidget(learning_rate_label)
+        learning_rate_box.addWidget(learning_rate_input)
+
+        alpha_box = QHBoxLayout()
+        alpha_input = QDoubleSpinBox()
+        alpha_input.setValue(self.alpha)
+        alpha_input.valueChanged.connect(lambda i: self.value_changed(i, "alpha"))
+        alpha_label = QLabel("Alpha:")
+        alpha_label.setBuddy(alpha_input)
+        alpha_box.addWidget(alpha_label)
+        alpha_box.addWidget(alpha_input)
+
+        total_epochs_box = QHBoxLayout()
+        total_epochs_input = QSpinBox()
+        total_epochs_input.setValue(self.total_epochs)
+        total_epochs_input.valueChanged.connect(lambda i: self.value_changed(i, "total_epochs"))
+        total_epochs_label = QLabel("Total epochs:")
+        total_epochs_label.setBuddy(total_epochs_input)
+        total_epochs_box.addWidget(total_epochs_label)
+        total_epochs_box.addWidget(total_epochs_input)
+
         grid.addLayout(num_of_clients_box, 0, 0)
         grid.addLayout(dataset_box, 0, 1)
+        grid.addLayout(learning_rate_box, 1, 0)
+        grid.addLayout(alpha_box, 1, 1)
 
     def value_changed(self, i, name):
         self.__dict__[name] = i
