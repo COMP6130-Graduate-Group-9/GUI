@@ -1,8 +1,11 @@
 from PyQt5.QtGui import QFont
 from PyQt5.QtCore import QProcess
-from PyQt5.QtWidgets import (QGroupBox, QLabel, QVBoxLayout, QPushButton, QPlainTextEdit)
+from PyQt5.QtWidgets import (QGroupBox, QLabel, QVBoxLayout, QPushButton, QPlainTextEdit,
+    QGridLayout, QComboBox, QSpinBox)
 
 import os
+
+from parameter_effectiveness import ParameterWidget
 
 class PanelEffectiveness(QGroupBox):
     def __init__(self, parent=None):
@@ -15,18 +18,27 @@ class PanelEffectiveness(QGroupBox):
         titleFont.setPointSize(24)
         titleLabel.setFont(titleFont)
 
-        self.btn_generate_dataset = QPushButton("Generate dataset")
-        self.btn_generate_dataset.pressed.connect(self.generate_dataset)
-        self.btn_run_experiment = QPushButton("Run experiment")
-        self.btn_run_experiment.pressed.connect(self.run_experiment)
-        self.text = QPlainTextEdit()
-        self.text.setReadOnly(True)
+        descriptionLabel = QLabel("Please specify your parameters and submit the job")
+
+        self.parameters = ParameterWidget()
+
+        self.btn_submit = QPushButton("SUBMIT")
+        self.btn_submit.pressed.connect(self.submit_job)
+        # self.btn_generate_dataset = QPushButton("Generate dataset")
+        # self.btn_generate_dataset.pressed.connect(self.generate_dataset)
+        # self.btn_run_experiment = QPushButton("Run experiment")
+        # self.btn_run_experiment.pressed.connect(self.run_experiment)
+        # self.text = QPlainTextEdit()
+        # self.text.setReadOnly(True)
 
         layout = QVBoxLayout(self)
         layout.addWidget(titleLabel)
-        layout.addWidget(self.btn_generate_dataset)
-        layout.addWidget(self.btn_run_experiment)
-        layout.addWidget(self.text)
+        layout.addWidget(descriptionLabel)
+        layout.addWidget(self.parameters)
+        layout.addWidget(self.btn_submit)
+        # layout.addWidget(self.btn_generate_dataset)
+        # layout.addWidget(self.btn_run_experiment)
+        # layout.addWidget(self.text)
         self.setLayout(layout)
 
     def message(self, s):
@@ -57,6 +69,10 @@ class PanelEffectiveness(QGroupBox):
             os.chdir("algorithms/FedGen")
             script = "main.py --dataset Mnist-alpha0.1-ratio0.5 --algorithm FedGen --batch_size 32 --num_glob_iters 200 --local_epochs 20 --num_users 10 --lamda 1 --learning_rate 0.01 --model cnn --personal_learning_rate 0.01 --times 3"
             self.p.start(f"{return_path}venv/Scripts/python.exe", script.split(" "))
+
+    def submit_job(self):
+        print(self.parameters.num_of_clients)
+        print(self.parameters.dataset)
 
     def handle_stderr(self):
         data = self.p.readAllStandardError()
