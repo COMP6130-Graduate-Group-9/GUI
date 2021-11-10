@@ -1,13 +1,13 @@
 from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import (QGroupBox, QLabel, QVBoxLayout)
 
-class PanelPrivacy(QGroupBox):
+class PanelFairness(QGroupBox):
     def __init__(self, parent=None):
         QGroupBox.__init__(self, parent=parent)
 
         self.p = None  # Default empty value.
 
-        titleLabel = QLabel("Privacy")
+        titleLabel = QLabel("Fairness")
         titleFont = QFont()
         titleFont.setPointSize(24)
         titleLabel.setFont(titleFont)
