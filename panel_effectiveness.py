@@ -1,10 +1,12 @@
 from PyQt5.QtGui import QFont
 from PyQt5.QtCore import QProcess
-from PyQt5.QtWidgets import (QGroupBox, QLabel, QVBoxLayout, QPushButton, QPlainTextEdit,
-    QGridLayout, QComboBox, QSpinBox)
+from PyQt5.QtWidgets import (QGroupBox, QLabel, QStackedLayout, QVBoxLayout, QPushButton,
+    QPlainTextEdit, QWidget)
 
 import os
 
+from effectiveness import job_widgets
+from process_manager import ProcessManager
 from parameter_effectiveness import ParameterWidget
 
 class PanelEffectiveness(QGroupBox):
@@ -12,50 +14,72 @@ class PanelEffectiveness(QGroupBox):
         QGroupBox.__init__(self, parent=parent)
 
         self.p = None  # Default empty value.
+        self.text = QPlainTextEdit()
+        self.text.setReadOnly(True)
 
         titleLabel = QLabel("Effectiveness")
         titleFont = QFont()
         titleFont.setPointSize(24)
         titleLabel.setFont(titleFont)
 
+        self.current_job_display = QStackedLayout()
+        # parameters display
+        parameters_container = QWidget()
+        parameters_layout = QVBoxLayout(parameters_container)
+
         descriptionLabel = QLabel("Please specify your parameters and submit the job")
 
         self.parameters = ParameterWidget()
 
-        self.btn_submit = QPushButton("SUBMIT")
-        self.btn_submit.pressed.connect(self.submit_job)
+        btn_submit = QPushButton("SUBMIT")
+        btn_submit.pressed.connect(self.submit_job)
+
+        parameters_layout.addWidget(descriptionLabel)
+        parameters_layout.addWidget(self.parameters)
+        parameters_layout.addWidget(btn_submit)
+        # job display
+        self.general_job_container = job_widgets.GeneralJob()
+
+        self.current_job_display.addWidget(parameters_container)
+        self.current_job_display.addWidget(self.general_job_container)
+        self.current_job_display.setCurrentIndex(0)
         # self.btn_generate_dataset = QPushButton("Generate dataset")
         # self.btn_generate_dataset.pressed.connect(self.generate_dataset)
         # self.btn_run_experiment = QPushButton("Run experiment")
         # self.btn_run_experiment.pressed.connect(self.run_experiment)
-        # self.text = QPlainTextEdit()
-        # self.text.setReadOnly(True)
 
         layout = QVBoxLayout(self)
         layout.addWidget(titleLabel)
-        layout.addWidget(descriptionLabel)
-        layout.addWidget(self.parameters)
-        layout.addWidget(self.btn_submit)
+        layout.addLayout(self.current_job_display)
         # layout.addWidget(self.btn_generate_dataset)
         # layout.addWidget(self.btn_run_experiment)
-        # layout.addWidget(self.text)
         self.setLayout(layout)
+
+        exec_dir = f"algorithms/FedGen/data/{self.parameters.dataset}"
+        return_path = "../../../../"
+        self.manager = ProcessManager(exec_dir, return_path)
+        self.manager.textChanged.connect(self.general_job_container.update_status)
 
     def message(self, s):
         self.text.appendPlainText(s)
 
     def generate_dataset(self):
-        if self.p is None:  # No process running.
-            self.message("Executing process")
-            self.p = QProcess()  # Keep a reference to the QProcess (e.g. on self) while it's running.
-            self.p.readyReadStandardOutput.connect(self.handle_stdout)
-            self.p.readyReadStandardError.connect(self.handle_stderr)
-            self.p.stateChanged.connect(self.handle_state)
-            return_path = "../../../../"
-            self.p.finished.connect(lambda: self.process_finished(return_path))  # Clean up once complete.
-            os.chdir("algorithms/FedGen/data/Mnist")
-            script = "generate_niid_dirichlet.py --n_class 10 --sampling_ratio 0.5 --alpha 0.1 --n_user 20"
-            self.p.start(f"{return_path}venv/Scripts/python.exe", script.split(" "))
+        if self.parameters.dataset == "Celeb": pass
+        script = f"generate_niid_dirichlet.py --n_class 10 --sampling_ratio {self.parameters.sampling_ratio} --alpha {self.parameters.alpha} --n_user 20"
+        self.manager.run_script(script)
+        # manager.started.connect(progBar.show)
+        # manager.finished.connect(progBar.close)
+        # if self.p is None:  # No process running.
+        #     self.message("Executing process")
+        #     self.p = QProcess()  # Keep a reference to the QProcess (e.g. on self) while it's running.
+        #     self.p.readyReadStandardOutput.connect(self.handle_stdout)
+        #     self.p.readyReadStandardError.connect(self.handle_stderr)
+        #     self.p.stateChanged.connect(self.handle_state)
+        #     return_path = "../../../../"
+        #     self.p.finished.connect(lambda: self.process_finished(return_path))  # Clean up once complete.
+        #     os.chdir(f"algorithms/FedGen/data/{self.parameters.dataset}")
+        #     script = f"generate_niid_dirichlet.py --n_class 10 --sampling_ratio {self.parameters.sampling_ratio} --alpha {self.parameters.alpha} --n_user 20"
+        #     self.p.start(f"{return_path}venv/Scripts/python.exe", script.split(" "))
 
     def run_experiment(self):
         if self.p is None:  # No process running.
@@ -71,8 +95,8 @@ class PanelEffectiveness(QGroupBox):
             self.p.start(f"{return_path}venv/Scripts/python.exe", script.split(" "))
 
     def submit_job(self):
-        print(self.parameters.num_of_clients)
-        print(self.parameters.dataset)
+        self.current_job_display.setCurrentIndex(1)
+        self.generate_dataset()
 
     def handle_stderr(self):
         data = self.p.readAllStandardError()
