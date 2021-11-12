@@ -79,6 +79,10 @@ class PanelPrivacy(QGroupBox):
     def handle_stderr(self):
         data = self.p.readAllStandardError()
         stderr = bytes(data).decode("utf8")
+        # Extract progress if it is in the data.
+        progress = simple_percent_parser(stderr)
+        if progress:
+            self.progress.setValue(progress)
         self.message(stderr)
 
     def handle_stdout(self):

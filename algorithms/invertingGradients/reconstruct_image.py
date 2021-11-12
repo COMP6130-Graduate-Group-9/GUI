@@ -37,8 +37,9 @@ if __name__ == "__main__":
 
     # Get data:
     #loss_fn, trainloader, validloader = inversefed.construct_dataloaders(args.dataset, defs, data_path=args.data_path)
-    loss_fn, trainloader, validloader = inversefed.construct_dataloaders('CIFAR10', defs, data_path='/Users/jinwooshin/Desktop/Github/Inverting Gradients/invertinggradients/images/')
-
+    loss_fn, trainloader, validloader = inversefed.construct_dataloaders('CIFAR10', defs, 
+    data_path='/Users/jinwooshin/Desktop/GUI/GUI-1/algorithms/invertinggradients/images/') # path to save generated files
+    
     dm = torch.as_tensor(getattr(inversefed.consts, f'{args.dataset.lower()}_mean'), **setup)[:, None, None]
     ds = torch.as_tensor(getattr(inversefed.consts, f'{args.dataset.lower()}_std'), **setup)[:, None, None]
 
