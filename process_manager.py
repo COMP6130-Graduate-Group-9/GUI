@@ -18,8 +18,8 @@ class ProcessManager(QObject):
         self._process.readyReadStandardOutput.connect(self.onReadyReadStandardOutput)
         self._process.stateChanged.connect(self.onStateChanged)
         self._process.started.connect(self.started)
-        self._process.finished.connect(self.finished)
         self._process.finished.connect(self.onFinished)
+        self._process.finished.connect(self.finished)
 
     def run_script(self, script=""):
         os.chdir(self._exec_dir)
@@ -36,8 +36,8 @@ class ProcessManager(QObject):
 
     @pyqtSlot(int, QProcess.ExitStatus)
     def onFinished(self, exitCode, exitStatus):
-        print(exitCode, exitStatus)
         os.chdir(self._return_path)
+        print(exitCode, exitStatus)
 
     @pyqtSlot()
     def onReadyReadStandardError(self):
