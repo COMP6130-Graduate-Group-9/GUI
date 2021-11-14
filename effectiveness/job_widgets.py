@@ -3,6 +3,7 @@ from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QProgressBar, QPlainTextEdit,
     QHBoxLayout, QSpinBox, QComboBox, QLabel, QDoubleSpinBox,
     QPushButton, QFrame, QSizePolicy)
 
+import re
 from process_manager import ProcessManager
 
 class QHSeperationLine(QFrame):
@@ -154,7 +155,8 @@ class GeneralJob(QWidget):
         super().__init__()
 
         self.main_panel = main_panel
-        self.current_task = 'dataset'
+        self.iteration = 0
+        self.round = 0
 
         general_job_layout = QVBoxLayout()
         self.setLayout(general_job_layout)
@@ -181,6 +183,11 @@ class GeneralJob(QWidget):
     def update_status(self, status):
         self.text.appendPlainText(status)
 
+    @pyqtSlot(str)
+    def experiment_update_status(self, status):
+        self.track_progress(status)
+        self.text.appendPlainText(status)
+
     @pyqtSlot()
     def dataset_complete(self):
         self.progress.setValue(100)
@@ -189,7 +196,7 @@ class GeneralJob(QWidget):
     @pyqtSlot()
     def complete(self):
         self.progress.setValue(100)
-        self.run_experiment()
+        self.current_action.setText('Experiment complete')
 
     def skip_dataset(self):
         self.progress.setValue(100)
@@ -203,7 +210,7 @@ class GeneralJob(QWidget):
         self.manager = ProcessManager(exec_dir, return_path)
         self.manager.started.connect(self.main_panel.general_job_container.initialize)
         self.manager.finished.connect(self.main_panel.general_job_container.complete)
-        self.manager.textChanged.connect(self.main_panel.general_job_container.update_status)
+        self.manager.textChanged.connect(self.main_panel.general_job_container.experiment_update_status)
 
         alpha = self.main_panel.parameters_container.alpha
         ratio = self.main_panel.parameters_container.sampling_ratio
@@ -213,3 +220,23 @@ class GeneralJob(QWidget):
         total_epochs = self.main_panel.parameters_container.total_epochs
         script = f"main.py --dataset Mnist-alpha{alpha}-ratio{ratio} --algorithm FedGen --batch_size 32 --num_glob_iters {global_iterations} --local_epochs {total_epochs} --num_users {clients} --lamda 1 --learning_rate {learning_rate} --model cnn --personal_learning_rate 0.01 --times 3"
         self.manager.run_script(script)
+
+    def track_progress(self, status):
+        updated = False
+        re_iteration = re.findall(r'Start training iteration \d+', status)
+        if len(re_iteration) > 0:
+            iteration_matched_text = re_iteration[-1]
+            self.iteration = int(re.findall(r'\d+', iteration_matched_text)[0])
+            updated = True
+        re_round = re.findall(r'Round number:  \d+', status)
+        if re_round:
+            round_matched_text = re_round[-1]
+            self.round = int(re.findall(r'\d+', round_matched_text)[0])
+            updated = True
+        
+        if updated:
+            total_rounds = self.main_panel.parameters_container.global_iterations
+            total_iterations = 3
+
+            percentage = self.iteration * (100 / total_iterations) + self.round / total_rounds * (100 / total_iterations)
+            self.progress.setValue(percentage)
