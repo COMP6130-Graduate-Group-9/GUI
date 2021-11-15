@@ -1,7 +1,8 @@
 from PyQt5.QtGui import QFont
 from PyQt5.QtCore import QProcess, right
-from PyQt5.QtWidgets import (QBoxLayout, QComboBox, QDialog, QGroupBox, QLabel, QStackedLayout, QVBoxLayout, QHBoxLayout, QGridLayout, QPushButton, QPlainTextEdit)
+from PyQt5.QtWidgets import (QBoxLayout, QComboBox, QDialog, QGroupBox, QLabel, QProgressBar, QStackedLayout, QVBoxLayout, QHBoxLayout, QGridLayout, QPushButton, QPlainTextEdit)
 
+import numpy
 import os
 
 class PanelFairness(QGroupBox):
@@ -184,6 +185,9 @@ class Experiment(PanelFairness):
         
         self.p = None
         
+        self.rounds = -1
+        self.rounds_obj = []
+        
         self.text = QPlainTextEdit()
         self.text.setReadOnly(True)
         
@@ -196,12 +200,15 @@ class Experiment(PanelFairness):
         self.btn_run_experiment.pressed.connect(self.run_experiment)
         self.btn_go_to_setup = QPushButton("Back")
         self.btn_go_to_setup.pressed.connect(self.go_to_setup) 
+        self.progressbar = QProgressBar(self)
+        #self.progressbar.setGeometry(30, 40, 200, 25)
         
         topLayout = QHBoxLayout()
         leftLayout = QVBoxLayout()
         leftLayout.addWidget(titleLabel)
         leftLayout.addWidget(self.btn_run_experiment)
         leftLayout.addWidget(self.btn_go_to_setup)
+        leftLayout.addWidget(self.progressbar)
         #topLayout.addWidget(leftLayout)
         topLayout.addWidget(self.text)
         
@@ -225,13 +232,21 @@ class Experiment(PanelFairness):
             os.chdir("algorithms/easyFL")
             script = "main.py --task mnist_client100_dist0_beta0_noise0 --model cnn --method fedavg --num_rounds 20 --num_epochs 5 --learning_rate 0.215 --proportion 0.1 --batch_size 10 --train_rate 1 --eval_interval 1"
             self.p.start(f"{return_path}venv/Scripts/python.exe", script.split(" "))
-    
+            
+                
     def go_to_setup(self):
         if self.parent != None:
             self.parent.switch_panel(1)
     
     def message(self, s):
-        self.text.appendPlainText(s) 
+        self.text.appendPlainText(s)
+        if (s.find('Round ') != -1):
+            self.rounds = self.rounds + 1
+            self.progressbar.setValue(self.rounds*5)
+        
+        if (s.find('==End==') != -1):
+            self.rounds = self.rounds + 1
+            self.progressbar.setValue(100)
     
     
     def handle_stderr(self):
@@ -258,3 +273,14 @@ class Experiment(PanelFairness):
         self.p = None
         if return_path is not None:
             os.chdir(return_path)
+
+
+class round_data:
+    num_round: int
+    time_cost: float
+    training_loss: float
+    testing_loss: float
+    testing_accuracy: float
+    validating_accuracy: float
+    mean_of_client_accuracy: float
+    std_of_client_accuracy: float
