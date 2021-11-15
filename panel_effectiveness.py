@@ -7,7 +7,6 @@ import os
 
 from effectiveness import job_widgets
 from process_manager import ProcessManager
-from parameter_effectiveness import ParameterWidget
 
 class PanelEffectiveness(QGroupBox):
     def __init__(self, parent=None):
@@ -19,7 +18,7 @@ class PanelEffectiveness(QGroupBox):
 
         titleLabel = QLabel("Effectiveness")
         titleFont = QFont()
-        titleFont.setPointSize(24)
+        titleFont.setPointSize(20)
         titleLabel.setFont(titleFont)
 
         self.current_job_display = QStackedLayout()
