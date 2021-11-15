@@ -1,9 +1,10 @@
-from PyQt5.QtCore import pyqtSlot
+from PyQt5.QtCore import QTimer, pyqtSlot
+from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QProgressBar, QPlainTextEdit, QGridLayout,
     QHBoxLayout, QSpinBox, QComboBox, QLabel, QDoubleSpinBox,
     QPushButton, QFrame, QSizePolicy)
 
-import re
+import re, math
 from process_manager import ProcessManager
 
 class QHSeperationLine(QFrame):
@@ -158,7 +159,7 @@ class GeneralJob(QWidget):
         self.iteration = 0
         self.round = 0
 
-        general_job_layout = QVBoxLayout()
+        general_job_layout = QGridLayout()
         self.setLayout(general_job_layout)
         
         progress_box = QHBoxLayout()
@@ -172,8 +173,16 @@ class GeneralJob(QWidget):
         self.text = QPlainTextEdit()
         self.text.setReadOnly(True)
 
-        general_job_layout.addLayout(progress_box)
-        general_job_layout.addWidget(self.text)
+        right_box = QVBoxLayout()
+        self.timer = Timer()
+        right_box.addWidget(self.timer)
+        btn_view_job = QPushButton("View job")
+        btn_view_job.pressed.connect(self.view_job)
+        right_box.addWidget(btn_view_job)
+
+        general_job_layout.addLayout(progress_box, 0, 0, 1, 2)
+        general_job_layout.addWidget(self.text, 1, 0, 1, 1)
+        general_job_layout.addLayout(right_box, 1, 1, 1, 1)
     
     @pyqtSlot()
     def initialize(self):
@@ -195,6 +204,7 @@ class GeneralJob(QWidget):
 
     @pyqtSlot()
     def complete(self):
+        self.timer.stop()
         self.progress.setValue(100)
         self.current_action.setText('Experiment complete')
 
@@ -220,6 +230,7 @@ class GeneralJob(QWidget):
         total_epochs = self.main_panel.parameters_container.total_epochs
         script = f"main.py --dataset Mnist-alpha{alpha}-ratio{ratio} --algorithm FedGen --batch_size 32 --num_glob_iters {global_iterations} --local_epochs {total_epochs} --num_users {clients} --lamda 1 --learning_rate {learning_rate} --model cnn --personal_learning_rate 0.01 --times 3"
         self.manager.run_script(script)
+        self.timer.start()
 
     def track_progress(self, status):
         updated = False
@@ -240,3 +251,43 @@ class GeneralJob(QWidget):
 
             percentage = self.iteration * (100 / total_iterations) + self.round / total_rounds * (100 / total_iterations)
             self.progress.setValue(percentage)
+
+    def view_job(self):
+        pass
+
+class Timer(QWidget):
+    def __init__(self):
+        super().__init__()
+
+        self.counter = 0
+        self.elapsed_time = None
+
+        layout = QVBoxLayout(self)
+
+        elapsed_time_label = QLabel()
+        elapsed_time_label.setText("Elapsed time")
+        self.time_display = QLabel()
+        self.time_display.setText("00:00:00")
+        timerFont = QFont()
+        timerFont.setPointSize(16)
+        self.time_display.setFont(timerFont)
+        layout.addWidget(elapsed_time_label)
+        layout.addWidget(self.time_display)
+
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.display)
+
+    def start(self):
+        self.timer.start(1000)
+
+    def stop(self):
+        self.timer.stop()
+    
+    def display(self):
+        self.counter += 1
+        second = self.counter % 60
+        minute = (self.counter // 60) % 60
+        hour = self.counter // 3600
+        self.elapsed_time = f"{hour:02}:{minute:02}:{second:02}"
+        self.time_display.setText(self.elapsed_time)
+
