@@ -19,7 +19,8 @@ def construct_model(model, num_classes=10, seed=None, num_channels=3, modelkey=N
     """Return various models."""
     if modelkey is None:
         if seed is None:
-            model_init_seed = np.random.randint(0, 2**32 - 10)
+            model_init_seed = np.random.randint(0, 2**32 - 10, dtype=np.uint32) 
+            # adding "dtype=np.unit32" solves the "ValueError: high is out of bounds for int32" error
         else:
             model_init_seed = seed
     else:
