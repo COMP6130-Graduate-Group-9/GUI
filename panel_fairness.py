@@ -185,8 +185,7 @@ class Experiment(PanelFairness):
         
         self.p = None
         
-        self.rounds = -1
-        self.rounds_obj = []
+        self.rounds = 0
         
         self.text = QPlainTextEdit()
         self.text.setReadOnly(True)
@@ -242,10 +241,14 @@ class Experiment(PanelFairness):
         self.text.appendPlainText(s)
         if (s.find('Round ') != -1):
             self.rounds = self.rounds + 1
-            self.progressbar.setValue(self.rounds*5)
+            self.progressbar.setValue(self.rounds*(100/22))
         
         if (s.find('==End==') != -1):
             self.rounds = self.rounds + 1
+            self.progressbar.setValue(self.rounds*(100/22))
+            self.progressbar.setValue(100)
+            
+        if (s.find('Mean Time Cost of Each Round') != -1):
             self.progressbar.setValue(100)
     
     
@@ -273,14 +276,3 @@ class Experiment(PanelFairness):
         self.p = None
         if return_path is not None:
             os.chdir(return_path)
-
-
-class round_data:
-    num_round: int
-    time_cost: float
-    training_loss: float
-    testing_loss: float
-    testing_accuracy: float
-    validating_accuracy: float
-    mean_of_client_accuracy: float
-    std_of_client_accuracy: float
