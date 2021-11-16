@@ -4,7 +4,7 @@ import os
 
 class ProcessManager(QObject):
     started = pyqtSignal()
-    finished = pyqtSignal()
+    finished = pyqtSignal(int, QProcess.ExitStatus)
     textChanged = pyqtSignal(str)
 
     def __init__(self, exec_dir, return_path, parent=None):
@@ -24,6 +24,9 @@ class ProcessManager(QObject):
     def run_script(self, script=""):
         os.chdir(self._exec_dir)
         self._process.start(f"{self._return_path}venv/Scripts/python.exe", script.split(" "))
+
+    def stop(self):
+        self._process.kill()
 
     @pyqtSlot(QProcess.ProcessState)
     def onStateChanged(self, state):

@@ -26,9 +26,12 @@ class PanelEffectiveness(QGroupBox):
         self.parameters_container = job_widgets.Parameters(self)
         # job display
         self.general_job_container = job_widgets.GeneralJob(self)
+        # results display
+        self.results_container = job_widgets.Results(self)
 
         self.current_job_display.addWidget(self.parameters_container)
         self.current_job_display.addWidget(self.general_job_container)
+        self.current_job_display.addWidget(self.results_container)
         self.current_job_display.setCurrentIndex(0)
         # self.btn_generate_dataset = QPushButton("Generate dataset")
         # self.btn_generate_dataset.pressed.connect(self.generate_dataset)
@@ -58,8 +61,8 @@ class PanelEffectiveness(QGroupBox):
             script = "main.py --dataset Mnist-alpha0.1-ratio0.5 --algorithm FedGen --batch_size 32 --num_glob_iters 200 --local_epochs 20 --num_users 10 --lamda 1 --learning_rate 0.01 --model cnn --personal_learning_rate 0.01 --times 3"
             self.p.start(f"{return_path}venv/Scripts/python.exe", script.split(" "))
 
-    def switch_to_general_job(self):
-        self.current_job_display.setCurrentIndex(1)
+    def switch_current_job_display(self, index):
+        self.current_job_display.setCurrentIndex(index)
 
     def handle_stderr(self):
         data = self.p.readAllStandardError()

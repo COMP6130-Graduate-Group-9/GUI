@@ -1,10 +1,10 @@
-from PyQt5.QtCore import QTimer, pyqtSlot
+from PyQt5.QtCore import QTimer, pyqtSlot, QProcess
 from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QProgressBar, QPlainTextEdit, QGridLayout,
     QHBoxLayout, QSpinBox, QComboBox, QLabel, QDoubleSpinBox,
     QPushButton, QFrame, QSizePolicy)
 
-import re, math
+import re, os
 from process_manager import ProcessManager
 
 class QHSeperationLine(QFrame):
@@ -136,7 +136,7 @@ class Parameters(QWidget):
             self.dataset = "Celeb"
 
     def submit_job(self):
-        self.main_panel.switch_to_general_job()
+        self.main_panel.switch_current_job_display(1)
 
         exec_dir = f"algorithms/FedGen/data/{self.dataset}"
         return_path = "../../../../"
@@ -158,6 +158,8 @@ class GeneralJob(QWidget):
         self.main_panel = main_panel
         self.iteration = 0
         self.round = 0
+        self.manager = None
+        self.status = "running"
 
         general_job_layout = QGridLayout()
         self.setLayout(general_job_layout)
@@ -176,9 +178,12 @@ class GeneralJob(QWidget):
         right_box = QVBoxLayout()
         self.timer = Timer()
         right_box.addWidget(self.timer)
-        btn_view_job = QPushButton("View job")
-        btn_view_job.pressed.connect(self.view_job)
-        right_box.addWidget(btn_view_job)
+        self.btn_extra_action = QPushButton("View job")
+        self.btn_extra_action.pressed.connect(self.extra_action)
+        right_box.addWidget(self.btn_extra_action)
+        self.btn_cancel = QPushButton("Cancel")
+        self.btn_cancel.pressed.connect(self.cancel)
+        right_box.addWidget(self.btn_cancel)
 
         general_job_layout.addLayout(progress_box, 0, 0, 1, 2)
         general_job_layout.addWidget(self.text, 1, 0, 1, 1)
@@ -197,16 +202,20 @@ class GeneralJob(QWidget):
         self.track_progress(status)
         self.text.appendPlainText(status)
 
-    @pyqtSlot()
-    def dataset_complete(self):
-        self.progress.setValue(100)
-        self.run_experiment()
+    @pyqtSlot(int, QProcess.ExitStatus)
+    def dataset_complete(self, exitCode, exitStatus):
+        if exitStatus == 0:
+            self.progress.setValue(100)
+            self.run_experiment()
 
-    @pyqtSlot()
-    def complete(self):
-        self.timer.stop()
-        self.progress.setValue(100)
-        self.current_action.setText('Experiment complete')
+    @pyqtSlot(int, QProcess.ExitStatus)
+    def complete(self, exitCode, exitStatus):
+        if exitStatus == 0:
+            self.timer.stop()
+            self.progress.setValue(100)
+            self.current_action.setText('Experiment complete')
+            self.btn_cancel.setParent(None)
+            self.btn_extra_action.setText("View results")
 
     def skip_dataset(self):
         self.progress.setValue(100)
@@ -252,8 +261,45 @@ class GeneralJob(QWidget):
             percentage = self.iteration * (100 / total_iterations) + self.round / total_rounds * (100 / total_iterations)
             self.progress.setValue(percentage)
 
-    def view_job(self):
-        pass
+    def extra_action(self):
+        if self.status == "running":
+            pass
+        else:
+            self.main_panel.switch_current_job_display(2)
+
+    def cancel(self):
+        if self.main_panel.parameters_container.manager:
+            self.main_panel.parameters_container.manager.stop()
+        if self.manager:
+            self.manager.stop()
+            self.timer.stop()
+            self.timer.reset()
+
+        self.text.clear()
+        self.current_action.setText('Generating dataset.....')
+        self.progress.setValue(0)
+
+        self.main_panel.switch_current_job_display(0)
+
+class Results(QWidget):
+    def __init__(self, main_panel):
+        super().__init__()
+
+        self.main_panel = main_panel
+
+        layout = QGridLayout()
+        self.setLayout(layout)
+
+        numerical_result_box = QVBoxLayout()
+        accuracy = QLabel()
+        accuracy.setText(f"Accuracy: ")
+        numerical_result_box.addWidget(accuracy)
+        elapsed_time = QLabel()
+        elapsed_time.setText(f"Elapsed time: {self.main_panel.general_job_container.timer.elapsed_time}")
+        numerical_result_box.addWidget(elapsed_time)
+
+        layout.addLayout(numerical_result_box, 0, 0)
+
 
 class Timer(QWidget):
     def __init__(self):
@@ -282,6 +328,11 @@ class Timer(QWidget):
 
     def stop(self):
         self.timer.stop()
+
+    def reset(self):
+        self.counter = 0
+        self.elapsed_time = None
+        self.time_display.setText("00:00:00")
     
     def display(self):
         self.counter += 1
