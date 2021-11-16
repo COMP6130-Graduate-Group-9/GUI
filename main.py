@@ -17,8 +17,8 @@ class MainWindow(QDialog):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("COMP6130 Graduate Group 9 Project")
-        # self.setStyleSheet("background-color: #f68026")
-
+        self.setStyleSheet("background-color: #151a1e")
+        # dark 525252 / mac,aqua ececec / manjaro 151a1e
         titleLabel = QLabel("Trustworthy Federated Learning")
         # titleLabel.setStyleSheet("color: white;"
         #                     "background-color: #496e9c;"
@@ -94,14 +94,8 @@ class MainWindow(QDialog):
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    # macOS
-    File = open("macOS.qss",'r')
-
-    # Dark Theme
-    #File = open("dark.qss",'r')
-
-    # Aqua
-    #File = open("aqua.qss",'r')
+    # qss
+    File = open("manjaro.qss",'r')
     with File:
         qss = File.read()
         app.setStyleSheet(qss)

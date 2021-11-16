@@ -1,3 +1,10 @@
+/*
+ElegantDark Style Sheet for QT Applications
+Author: Jaime A. Quiroga P.
+Company: GTRONICK
+Last updated: 17/04/2018
+Available at: https://github.com/GTRONICK/QSS/blob/master/ElegantDark.qss
+*/
 QMainWindow {
     background-color:#ececec;
 }
