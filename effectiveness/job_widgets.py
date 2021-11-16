@@ -195,6 +195,7 @@ class GeneralJob(QWidget):
     
     @pyqtSlot(str)
     def update_status(self, status):
+        print(status)
         self.text.appendPlainText(status)
 
     @pyqtSlot(str)
@@ -246,7 +247,10 @@ class GeneralJob(QWidget):
         re_iteration = re.findall(r'Start training iteration \d+', status)
         if len(re_iteration) > 0:
             iteration_matched_text = re_iteration[-1]
-            self.iteration = int(re.findall(r'\d+', iteration_matched_text)[0])
+            new_iteration = int(re.findall(r'\d+', iteration_matched_text)[0])
+            if new_iteration != self.iteration and round == 99:
+                self.round = 0
+            self.iteration = new_iteration
             updated = True
         re_round = re.findall(r'Round number:  \d+', status)
         if re_round:
@@ -257,7 +261,6 @@ class GeneralJob(QWidget):
         if updated:
             total_rounds = self.main_panel.parameters_container.global_iterations
             total_iterations = 3
-
             percentage = self.iteration * (100 / total_iterations) + self.round / total_rounds * (100 / total_iterations)
             self.progress.setValue(percentage)
 
