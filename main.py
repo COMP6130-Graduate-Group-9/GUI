@@ -1,6 +1,9 @@
 from PyQt5.QtGui import QFont
-from PyQt5.QtWidgets import (QApplication, QDialog, QGroupBox, QRadioButton, QComboBox,
-    QLabel, QGridLayout, QHBoxLayout, QStackedLayout)
+from PyQt5.QtWidgets import (QAction, QApplication, QDialog, QGroupBox, QRadioButton, QComboBox,
+    QLabel, QGridLayout, QHBoxLayout, QStackedLayout, QWidget)
+
+from PyQt5.QtCore import (QFile)
+from PyQt5 import QtWidgets
 
 from panel_effectiveness import PanelEffectiveness
 from panel_privacy import PanelPrivacy
@@ -8,13 +11,22 @@ from panel_robustness import PanelRobustness
 from panel_fairness import PanelFairness
 
 import sys
+import os
 
 class MainWindow(QDialog):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("COMP6130 Graduate Group 9 Project")
+        # self.setStyleSheet("background-color: #f68026")
 
         titleLabel = QLabel("Trustworthy Federated Learning")
+        # titleLabel.setStyleSheet("color: white;"
+        #                     "background-color: #496e9c;"
+        #                     "border-style: solid;"
+        #                     "border-width: 1px;"
+        #                     "border-color: white;"
+        #                     "border-radius: 1px")
+
         titleFont = QFont()
         titleFont.setPointSize(24)
         titleLabel.setFont(titleFont)
@@ -32,6 +44,12 @@ class MainWindow(QDialog):
     
     def createPanelTabs(self):
         self.panelTabs = QGroupBox("")
+        # self.panelTabs.setStyleSheet("color: white;"
+        #                     "background-color: #496e9c;"
+        #                     "border-style: solid;"
+        #                     "border-width: 1px;"
+        #                     "border-color: white;"
+        #                     "border-radius: 1px")
 
         radioButtonEffectiveness = QRadioButton("Effectiveness")
         radioButtonEffectiveness.toggled.connect(lambda: self.switch_panel(0))
@@ -74,9 +92,19 @@ class MainWindow(QDialog):
     def switch_panel(self, index):
         self.panelDisplay.setCurrentIndex(index)
 
-
 if __name__ == '__main__':
     app = QApplication(sys.argv)
+    # macOS
+    File = open("macOS.qss",'r')
+
+    # Dark Theme
+    #File = open("dark.qss",'r')
+
+    # Aqua
+    #File = open("aqua.qss",'r')
+    with File:
+        qss = File.read()
+        app.setStyleSheet(qss)
     myapp = MainWindow()
     myapp.show()
     sys.exit(app.exec_())
