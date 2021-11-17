@@ -1,10 +1,10 @@
-from PyQt5.QtCore import QTimer, pyqtSlot, QProcess
+from PyQt5.QtCore import QTimer, pyqtSlot, QProcess, Qt
 from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import (QScrollArea, QStackedLayout, QWidget, QVBoxLayout, QProgressBar, QPlainTextEdit, QGridLayout,
     QHBoxLayout, QSpinBox, QComboBox, QLabel, QDoubleSpinBox,
     QPushButton, QFrame, QSizePolicy)
 
-import re, os
+import re
 from process_manager import ProcessManager
 
 class QHSeperationLine(QFrame):
@@ -308,15 +308,24 @@ class GeneralJob(QWidget):
 
         self.main_panel.switch_current_job_display(0)
 
-class Clients(QScrollArea):
+class Clients(QWidget):
     def __init__(self, main_panel):
         super().__init__()
 
         self.main_panel = main_panel
 
+        self.layout = QVBoxLayout()
+        self.setLayout(self.layout)
+        scroll = QScrollArea()
+        self.layout.addWidget(scroll)
+
+        btn_back = QPushButton("Back")
+        btn_back.clicked.connect(self.back_to_main_job)
+        self.layout.addWidget(btn_back)
+    
         wrapper = QWidget()
-        layout = QGridLayout()
-        wrapper.setLayout(layout)
+        grid = QGridLayout()
+        wrapper.setLayout(grid)
 
         self.clients = {}
 
@@ -324,18 +333,22 @@ class Clients(QScrollArea):
             client_name = f"Client {i+1}"
             object = self.IndividualClient(client_name)
             self.clients[client_name] = object
-            layout.addWidget(object, i//5, i%5)
+            grid.addWidget(object, i//5, i%5)
 
-        self.setWidget(wrapper)
+        scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        scroll.setWidgetResizable(True)
+        scroll.setWidget(wrapper)
 
-        
+    def back_to_main_job(self):
+        self.main_panel.general_job_container.layout.setCurrentIndex(0)
 
     class IndividualClient(QWidget):
         def __init__(self, name):
             super().__init__()
 
-            layout = QVBoxLayout()
-            self.setLayout(layout)
+            self.layout = QVBoxLayout()
+            self.setLayout(self.layout)
 
             client_name = QLabel(name)
             self.progress = QProgressBar()
@@ -344,15 +357,15 @@ class Clients(QScrollArea):
             self.accuracy = QLabel("Local accuracy: 0")
             self.loss = QLabel("Local Loss: 0")
             
-            layout.addWidget(client_name)
-            layout.addWidget(self.progress)
-            layout.addWidget(self.accuracy)
-            layout.addWidget(self.loss)
+            self.layout.addWidget(client_name)
+            self.layout.addWidget(self.progress)
+            self.layout.addWidget(self.accuracy)
+            self.layout.addWidget(self.loss)
 
         def update(self, progress, accuracy, loss):
             self.progress.setValue(progress)
-            self.accuracy.setText(f"Local accuracy: {accuracy}")
-            self.loss.setText(f"Local Loss: {loss}")
+            self.accuracy.setText(f"Local accuracy: {float(accuracy):.4f}")
+            self.loss.setText(f"Local Loss: {float(loss):.2f}")
 
 class Results(QWidget):
     def __init__(self, main_panel):
