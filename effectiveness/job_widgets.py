@@ -1,10 +1,10 @@
-from PyQt5.QtCore import QTimer, pyqtSlot, QProcess, Qt
+from PyQt5.QtCore import QPoint, QTimer, pyqtSlot, QProcess, Qt, QRect
 from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import (QScrollArea, QStackedLayout, QTableWidgetItem, QWidget, QVBoxLayout, QProgressBar, QPlainTextEdit, QGridLayout,
     QHBoxLayout, QSpinBox, QComboBox, QLabel, QDoubleSpinBox,
-    QPushButton, QFrame, QSizePolicy, QTableWidget)
+    QPushButton, QFrame, QSizePolicy, QTableWidget, QToolTip)
 
-import re
+import re, os, time
 from process_manager import ProcessManager
 
 class QHSeperationLine(QFrame):
@@ -387,6 +387,7 @@ class Results(QWidget):
 
         self.accuracy = 0
         self.loss = 0
+        self.elapsed_time = ""
 
         layout = QGridLayout()
         self.setLayout(layout)
@@ -396,32 +397,39 @@ class Results(QWidget):
         numerical_result_box.addWidget(self.accuracy_display)
         self.loss_display = QLabel()
         numerical_result_box.addWidget(self.loss_display)
-        self.elapsed_time = QLabel()
-        numerical_result_box.addWidget(self.elapsed_time)
+        self.elapsed_time_display = QLabel()
+        numerical_result_box.addWidget(self.elapsed_time_display)
 
         table = QTableWidget(self)
         table.setColumnCount(2)
         table.setRowCount(7)
 
-        parameters = {
-            'dataset': self.main_panel.parameters_container.dataset,
-            'sampling_ratio': self.main_panel.parameters_container.sampling_ratio,
-            'alpha': self.main_panel.parameters_container.alpha,
-            'num_of_clients': self.main_panel.parameters_container.num_of_clients,
-            'learning_rate': self.main_panel.parameters_container.learning_rate,
-            'global_iterations': self.main_panel.parameters_container.global_iterations,
-            'total_epochs': self.main_panel.parameters_container.total_epochs
+        self.parameters = {
+            'Dataset': self.main_panel.parameters_container.dataset,
+            'Sampling ratio': self.main_panel.parameters_container.sampling_ratio,
+            'Alpha': self.main_panel.parameters_container.alpha,
+            'Number of clients': self.main_panel.parameters_container.num_of_clients,
+            'Learning rate': self.main_panel.parameters_container.learning_rate,
+            'Global iterations': self.main_panel.parameters_container.global_iterations,
+            'Total epochs': self.main_panel.parameters_container.total_epochs
         }
 
-        for idx, val in enumerate(parameters.items()):
+        for idx, val in enumerate(self.parameters.items()):
             table.setItem(idx, 0, QTableWidgetItem(val[0]))
             table.setItem(idx, 1, QTableWidgetItem(str(val[1])))
 
         table.resizeColumnsToContents()
         table.resizeRowsToContents()
 
+        self.btn_save_results = QPushButton("Save results")
+        self.btn_save_results.clicked.connect(self.save_results)
+        btn_restart = QPushButton("Restart")
+        btn_restart.clicked.connect(self.return_to_parameters)
+
         layout.addLayout(numerical_result_box, 0, 0)
         layout.addWidget(table, 0, 1)
+        layout.addWidget(self.btn_save_results, 1, 0)
+        layout.addWidget(btn_restart, 1, 1)
 
     def record_global_result(self, accuracy, loss):
         self.accuracy = accuracy
@@ -430,7 +438,34 @@ class Results(QWidget):
         self.loss_display.setText(f"Loss: {float(self.loss):.2f}")
 
     def get_latest_elapsed_time(self):
-        self.elapsed_time.setText(f"Elapsed time: {self.main_panel.general_job_container.timer.elapsed_time}")
+        self.elapsed_time = self.main_panel.general_job_container.timer.elapsed_time
+        self.elapsed_time_display.setText(f"Elapsed time: {self.elapsed_time}")
+
+    def save_results(self):
+        logs_path = os.path.join(os.getcwd(), 'logs')
+        if not os.path.exists(logs_path):
+            os.mkdir(logs_path)
+
+        lines = [
+            'Result',
+            f'Accuracy: {self.accuracy}',
+            f'Loss: {self.loss}',
+            f'Elapsed time: {self.elapsed_time}',
+            '',
+            'Parameters'
+        ]
+        lines += [f'{p[0]}: {p[1]}' for p in self.parameters.items()]
+        t = time.localtime()
+        current_time = time.strftime("%m-%d-%Y_%H-%M-%S", t)
+        filename = f'effectiveness-{current_time}.txt'
+        file_path = os.path.join(logs_path, filename)
+        with open(file_path, 'w') as f:
+            f.write('\n'.join(lines))
+
+        QToolTip.showText(self.btn_save_results.mapToGlobal(QPoint(0,0)), f'File saved to {file_path}', self.btn_save_results, QRect(), 1000)
+    
+    def return_to_parameters(self):
+        self.main_panel.switch_current_job_display(0)
 
 
 class Timer(QWidget):
