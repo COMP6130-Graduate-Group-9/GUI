@@ -17,16 +17,7 @@ class MainWindow(QDialog):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("COMP6130 Graduate Group 9 Project")
-        self.setStyleSheet("background-color: #151a1e")
-        # dark 525252 / mac,aqua ececec / manjaro 151a1e
         titleLabel = QLabel("Trustworthy Federated Learning")
-        # titleLabel.setStyleSheet("color: white;"
-        #                     "background-color: #496e9c;"
-        #                     "border-style: solid;"
-        #                     "border-width: 1px;"
-        #                     "border-color: white;"
-        #                     "border-radius: 1px")
-
         titleFont = QFont()
         titleFont.setPointSize(24)
         titleLabel.setFont(titleFont)
@@ -37,20 +28,18 @@ class MainWindow(QDialog):
         topLayout.addWidget(titleLabel)
         topLayout.addWidget(self.panelTabs)
 
+        topLayoutWrapper = QWidget()
+        topLayoutWrapper.setObjectName("topLayoutWrapper")
+        topLayoutWrapper.setLayout(topLayout)
+
         mainLayout = QGridLayout()
-        mainLayout.addLayout(topLayout, 0, 0)
+        mainLayout.addWidget(topLayoutWrapper, 0, 0)
         mainLayout.addLayout(self.panelDisplay, 1, 0)
         self.setLayout(mainLayout)
     
     def createPanelTabs(self):
         self.panelTabs = QGroupBox("")
-        # self.panelTabs.setStyleSheet("color: white;"
-        #                     "background-color: #496e9c;"
-        #                     "border-style: solid;"
-        #                     "border-width: 1px;"
-        #                     "border-color: white;"
-        #                     "border-radius: 1px")
-
+        self.panelTabs.setObjectName("panelTabs")
         radioButtonEffectiveness = QRadioButton("Effectiveness")
         radioButtonEffectiveness.toggled.connect(lambda: self.switch_panel(0))
         radioButtonPrivacy = QRadioButton("Privacy")
@@ -63,6 +52,13 @@ class MainWindow(QDialog):
 
         robustnessComboBox = QComboBox()
         robustnessComboBox.addItems(["Backdoor Attack"])
+        # round border for dropdown
+        robustnessComboBox.setStyleSheet(
+            "border-top-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 #c1c9cf, stop:1 #d2d8dd);"
+            "border-right-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 #c1c9cf, stop:1 #d2d8dd);"
+            "border-bottom-color: qlineargradient(spread:pad, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 #c1c9cf, stop:1 #d2d8dd);"
+            "border-left-color: qlineargradient(spread:pad, x1:1, y1:0, x2:0, y2:0, stop:0 #c1c9cf, stop:1 #d2d8dd);"
+        )
         robustnessLabel = QLabel("&Type:")
         robustnessLabel.setBuddy(robustnessComboBox)
         robustnessWrapper = QHBoxLayout()
@@ -94,8 +90,9 @@ class MainWindow(QDialog):
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
+    #app.setStyleSheet('QMainWindow{background-color: darkgray;border: 1px solid black;}')
     # qss
-    File = open("manjaro.qss",'r')
+    File = open("qss/MacOS.qss",'r')
     with File:
         qss = File.read()
         app.setStyleSheet(qss)
