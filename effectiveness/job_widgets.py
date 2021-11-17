@@ -1,8 +1,8 @@
 from PyQt5.QtCore import QTimer, pyqtSlot, QProcess, Qt
 from PyQt5.QtGui import QFont
-from PyQt5.QtWidgets import (QScrollArea, QStackedLayout, QWidget, QVBoxLayout, QProgressBar, QPlainTextEdit, QGridLayout,
+from PyQt5.QtWidgets import (QScrollArea, QStackedLayout, QTableWidgetItem, QWidget, QVBoxLayout, QProgressBar, QPlainTextEdit, QGridLayout,
     QHBoxLayout, QSpinBox, QComboBox, QLabel, QDoubleSpinBox,
-    QPushButton, QFrame, QSizePolicy)
+    QPushButton, QFrame, QSizePolicy, QTableWidget)
 
 import re
 from process_manager import ProcessManager
@@ -212,6 +212,7 @@ class GeneralJob(QWidget):
     def experiment_update_status(self, status):
         percentage = self.track_progress(status)
         self.track_client(status, percentage)
+        self.track_global_result(status)
         self.text.appendPlainText(status)
 
     @pyqtSlot(int, QProcess.ExitStatus)
@@ -287,12 +288,18 @@ class GeneralJob(QWidget):
             client_name = f"Client {client}"
             if client_name in self.individual_job.clients:
                 self.individual_job.clients[client_name].update(percentage, accuracy, loss)
-        
+
+    def track_global_result(self, status):
+        re_global_result = re.findall(r'Average Global Accurancy = ([0-9]*[.]?[0-9]+), Loss = ([0-9]*[.]?[0-9]+).', status)
+        if len(re_global_result) > 0:
+            latest = re_global_result[-1]
+            self.main_panel.results_container.record_global_result(latest[0], latest[1])
 
     def extra_action(self):
         if self.status == "running":
             self.layout.setCurrentIndex(1)
         else:
+            self.main_panel.results_container.get_latest_elapsed_time()
             self.main_panel.switch_current_job_display(2)
 
     def cancel(self):
@@ -378,18 +385,52 @@ class Results(QWidget):
 
         self.main_panel = main_panel
 
+        self.accuracy = 0
+        self.loss = 0
+
         layout = QGridLayout()
         self.setLayout(layout)
 
         numerical_result_box = QVBoxLayout()
-        accuracy = QLabel()
-        accuracy.setText(f"Accuracy: ")
-        numerical_result_box.addWidget(accuracy)
-        elapsed_time = QLabel()
-        elapsed_time.setText(f"Elapsed time: {self.main_panel.general_job_container.timer.elapsed_time}")
-        numerical_result_box.addWidget(elapsed_time)
+        self.accuracy_display = QLabel()
+        numerical_result_box.addWidget(self.accuracy_display)
+        self.loss_display = QLabel()
+        numerical_result_box.addWidget(self.loss_display)
+        self.elapsed_time = QLabel()
+        numerical_result_box.addWidget(self.elapsed_time)
+
+        table = QTableWidget(self)
+        table.setColumnCount(2)
+        table.setRowCount(7)
+
+        parameters = {
+            'dataset': self.main_panel.parameters_container.dataset,
+            'sampling_ratio': self.main_panel.parameters_container.sampling_ratio,
+            'alpha': self.main_panel.parameters_container.alpha,
+            'num_of_clients': self.main_panel.parameters_container.num_of_clients,
+            'learning_rate': self.main_panel.parameters_container.learning_rate,
+            'global_iterations': self.main_panel.parameters_container.global_iterations,
+            'total_epochs': self.main_panel.parameters_container.total_epochs
+        }
+
+        for idx, val in enumerate(parameters.items()):
+            table.setItem(idx, 0, QTableWidgetItem(val[0]))
+            table.setItem(idx, 1, QTableWidgetItem(str(val[1])))
+
+        table.resizeColumnsToContents()
+        table.resizeRowsToContents()
 
         layout.addLayout(numerical_result_box, 0, 0)
+        layout.addWidget(table, 0, 1)
+
+    def record_global_result(self, accuracy, loss):
+        self.accuracy = accuracy
+        self.accuracy_display.setText(f"Accuracy: {float(self.accuracy):.4f}")
+        self.loss = loss
+        self.loss_display.setText(f"Loss: {float(self.loss):.2f}")
+
+    def get_latest_elapsed_time(self):
+        self.elapsed_time.setText(f"Elapsed time: {self.main_panel.general_job_container.timer.elapsed_time}")
 
 
 class Timer(QWidget):
