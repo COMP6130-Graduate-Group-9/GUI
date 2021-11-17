@@ -5,12 +5,6 @@ class ParameterWidget(QWidget):
     def __init__(self):
         super().__init__()
 
-        # self.setStyleSheet("color: white;"
-        #                     "background-color: #496e9c;"
-        #                     "border-style: solid;"
-        #                     "border-width: 1px;"
-        #                     "border-color: white;"
-        #                     "border-radius: 1px")
         self.model = "ResNet20-4"
         self.dataset = "CIFAR10"
         self.cost_fn = "sim"
