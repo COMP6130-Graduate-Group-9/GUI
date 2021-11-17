@@ -1,3 +1,4 @@
+from PyQt5 import QtWidgets
 from PyQt5.QtCore import QPoint, QTimer, pyqtSlot, QProcess, Qt, QRect
 from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import (QScrollArea, QStackedLayout, QTableWidgetItem, QWidget, QVBoxLayout, QProgressBar, QPlainTextEdit, QGridLayout,
@@ -117,12 +118,12 @@ class Parameters(QWidget):
         seperator_horizontal = QHSeperationLine()
 
         grid.addLayout(dataset_box, 0, 0, 1, 1)
-        grid.addLayout(dataset_param_box, 1, 0, 1, 1)
-        grid.addWidget(seperator_horizontal, 2, 0, 1, 1)
-        grid.addLayout(num_of_clients_box, 3, 0)
-        grid.addLayout(learning_rate_box, 3, 1)
-        grid.addLayout(global_iterations_box, 3, 2)
-        grid.addLayout(total_epochs_box, 3, 3)
+        grid.addLayout(dataset_param_box, 0, 1, 1, 1)
+        grid.addWidget(seperator_horizontal, 1, 0, 1, 4)
+        grid.addLayout(num_of_clients_box, 2, 0)
+        grid.addLayout(learning_rate_box, 2, 1)
+        grid.addLayout(global_iterations_box, 2, 2)
+        grid.addLayout(total_epochs_box, 2, 3)
 
     def value_changed(self, i, name):
         self.__dict__[name] = i
@@ -403,6 +404,8 @@ class Results(QWidget):
         table = QTableWidget(self)
         table.setColumnCount(2)
         table.setRowCount(7)
+        sizePolicy = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Preferred)
+        table.setSizePolicy(sizePolicy)
 
         self.parameters = {
             'Dataset': self.main_panel.parameters_container.dataset,
@@ -426,10 +429,10 @@ class Results(QWidget):
         btn_restart = QPushButton("Restart")
         btn_restart.clicked.connect(self.return_to_parameters)
 
-        layout.addLayout(numerical_result_box, 0, 0)
-        layout.addWidget(table, 0, 1)
-        layout.addWidget(self.btn_save_results, 1, 0)
-        layout.addWidget(btn_restart, 1, 1)
+        layout.addLayout(numerical_result_box, 0, 0, 1, 1)
+        layout.addWidget(table, 0, 1, 1, 1)
+        layout.addWidget(self.btn_save_results, 1, 0, 1, 1)
+        layout.addWidget(btn_restart, 1, 1, 1, 1)
 
     def record_global_result(self, accuracy, loss):
         self.accuracy = accuracy
