@@ -76,9 +76,13 @@ class MainWindow(QDialog):
     def createPanelDisplay(self):
         self.panelDisplay = QStackedLayout()
         panelEffectiveness = PanelEffectiveness()
+        panelEffectiveness.setObjectName("panelEffectiveness")
         panelPrivacy = PanelPrivacy()
+        panelPrivacy.setObjectName("panelPrivacy")
         panelRobustness = PanelRobustness()
+        panelRobustness.setObjectName("panelRobustness")
         panelFairness = PanelFairness()
+        panelFairness.setObjectName("panelFairness")
         self.panelDisplay.addWidget(panelEffectiveness)
         self.panelDisplay.addWidget(panelPrivacy)
         self.panelDisplay.addWidget(panelRobustness)
