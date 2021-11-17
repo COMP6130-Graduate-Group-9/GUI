@@ -229,6 +229,7 @@ class GeneralJob(QWidget):
             self.btn_cancel.setParent(None)
             self.btn_extra_action.setText("View results")
             self.status = "complete"
+            self.individual_job.complete_all_clients()
 
     def skip_dataset(self):
         self.progress.setValue(100)
@@ -342,6 +343,10 @@ class Clients(QWidget):
 
     def back_to_main_job(self):
         self.main_panel.general_job_container.layout.setCurrentIndex(0)
+
+    def complete_all_clients(self):
+        for c in self.clients.values():
+            c.progress.setValue(100)
 
     class IndividualClient(QWidget):
         def __init__(self, name):
