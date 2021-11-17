@@ -1,7 +1,13 @@
 from PyQt5.QtGui import QFont
 from PyQt5.QtCore import QProcess, left, right
 from PyQt5.QtWidgets import (QBoxLayout, QComboBox, QDialog, QGroupBox, QLabel, QProgressBar, QSpinBox, QStackedLayout, QVBoxLayout, QHBoxLayout, QGridLayout, QPushButton, QPlainTextEdit)
+from PyQt5 import QtCore
 
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from pathlib import Path
+from datetime import datetime
+import result_analysis
 import os
 
 class PanelFairness(QGroupBox):
@@ -26,16 +32,18 @@ class PanelFairness(QGroupBox):
     
     def createChildren(self):
         self.panelDisplay = QStackedLayout()
-        page1 = FairnessDataset(self)
+        self.page1 = Experiment(self)
+        self.page2 = Results(self)
         
-        self.panelDisplay.addWidget(page1)
+        self.panelDisplay.addWidget(self.page1)
+        self.panelDisplay.addWidget(self.page2)
         self.panelDisplay.setCurrentIndex(0)
     
     def switch_panel(self, index):
         self.panelDisplay.setCurrentIndex(index)
     
     
-class FairnessDataset(PanelFairness):
+class Experiment(PanelFairness):
     def __init__(self, parent=None):
         QGroupBox.__init__(self, parent=parent)
         self.parent = parent  
@@ -53,6 +61,7 @@ class FairnessDataset(PanelFairness):
         leftLayout = QVBoxLayout()
         leftLayout.addWidget(self.btn_generate_dataset)
         leftLayout.addWidget(self.btn_run_experiment)
+        leftLayout.addWidget(self.btn_show_results)
         
         rightLayout = QVBoxLayout()
         rightLayout.addWidget(self.text)
@@ -76,6 +85,8 @@ class FairnessDataset(PanelFairness):
         self.btn_generate_dataset.pressed.connect(self.generate_dataset)
         self.btn_run_experiment = QPushButton("Run Experiment")
         self.btn_run_experiment.pressed.connect(self.run_experiment)
+        self.btn_show_results = QPushButton("Show Results")
+        self.btn_show_results.pressed.connect(self.show_results)
         self.progressbarLabel = QLabel('Progress...')
         self.progressbarLabel.setFont(self.defaultFont)
         self.progressbar = QProgressBar(self)
@@ -128,6 +139,8 @@ class FairnessDataset(PanelFairness):
     
     def generate_dataset(self):
         if self.p is None:  # No process running.
+            if (str(Path(__file__).absolute()).find('utils') != -1):
+                os.chdir("../../..")
             self.message("Executing process")
             self.p = QProcess()  # Keep a reference to the QProcess (e.g. on self) while it's running.
             self.p.readyReadStandardOutput.connect(self.handle_stdout)
@@ -141,6 +154,9 @@ class FairnessDataset(PanelFairness):
     
     def run_experiment(self):
         if self.p is None:  # No process running.
+            self.rounds = 0
+            if (str(Path(__file__).absolute()).find('utils') != -1):
+                os.chdir("../../..")
             self.message("Executing process")
             self.p = QProcess()  # Keep a reference to the QProcess (e.g. on self) while it's running.
             self.p.readyReadStandardOutput.connect(self.handle_stdout)
@@ -149,9 +165,12 @@ class FairnessDataset(PanelFairness):
             return_path = "../../"
             self.p.finished.connect(lambda: self.process_finished(return_path))  # Clean up once complete.
             os.chdir("algorithms/easyFL")
-            #script = "main.py --task mnist_client100_dist0_beta0_noise0 --model cnn --method fedavg --num_rounds 20 --num_epochs 5 --learning_rate 0.215 --proportion 0.1 --batch_size 10 --train_rate 1 --eval_interval 1"
             script = "main.py --task mnist_client100_dist0_beta0_noise0 --model " + self.model + " --method " + self.method + " --num_rounds " + str(self.numRounds) + " --num_epochs 5 --learning_rate 0.215 --proportion 0.1 --batch_size " + str(self.batchSize) + " --train_rate 1 --eval_interval 1"
             self.p.start(f"{return_path}venv/Scripts/python.exe", script.split(" "))
+    
+    def show_results(self):      
+        self.go_to_results()
+        return
     
     def message(self, s):
         self.text.appendPlainText(s)
@@ -171,8 +190,7 @@ class FairnessDataset(PanelFairness):
             self.progressbar.setValue(self.rounds*(100/(self.numRounds + 2)))        
         elif (s.find('==End==') != -1):
             self.rounds = self.rounds + 1
-            self.progressbar.setValue(self.rounds*(100/(self.numRounds + 2)))
-            self.progressbar.setValue(100)            
+            self.progressbar.setValue(self.rounds*(100/(self.numRounds + 2)))            
         elif (s.find('Mean Time Cost of Each Round') != -1):
             self.progressbar.setValue(100)    
 
@@ -199,12 +217,10 @@ class FairnessDataset(PanelFairness):
     def value_changed(self, i, name):
         self.__dict__[name] = i
     
-    def go_to_setup(self):
+    def go_to_results(self):
         if self.parent != None:
-            self.parent.switch_panel(1)
-    
-    def message1(self, s):
-        self.text.appendPlainText(s)     
+            self.parent.page2.plot()
+            self.parent.switch_panel(1)    
     
     def handle_stderr(self):
         data = self.p.readAllStandardError()
@@ -230,3 +246,86 @@ class FairnessDataset(PanelFairness):
         self.p = None
         if return_path is not None:
             os.chdir(return_path)
+
+class Results(PanelFairness):
+    def __init__(self, parent=None):
+        QGroupBox.__init__(self, parent=parent)
+        self.parent = parent  
+        
+        self.p = None 
+        
+        self.btn_show_results = QPushButton("Show Results")
+        self.btn_show_results.setFixedSize(QtCore.QSize(100, 20))
+        self.btn_show_results.pressed.connect(self.plot)
+        self.btn_save = QPushButton("Save Results")
+        self.btn_save.setFixedSize(QtCore.QSize(100, 20))
+        self.btn_save.pressed.connect(self.save_plot)
+        self.btn_go_back = QPushButton("Back")
+        self.btn_go_back.setFixedSize(QtCore.QSize(100, 20))
+        self.btn_go_back.pressed.connect(self.go_back)        
+        
+        self.figure = plt.figure()
+        self.canvas = FigureCanvas(self.figure)
+        
+        leftLayout = QVBoxLayout()
+        leftLayout.addWidget(self.btn_save)
+        leftLayout.addWidget(self.btn_go_back)
+        
+        layout = QHBoxLayout()
+        layout.addLayout(leftLayout)
+        layout.addWidget(self.canvas)
+        self.setLayout(layout)
+    
+    def plot(self):
+        self.figure.clear()        
+        
+        if (str(Path(__file__).absolute()).find('utils') != -1):
+            os.chdir("../../..")
+            
+        os.chdir("algorithms/easyFL/utils")
+        ax, x , y = result_analysis.create_graphs()
+        
+        task = 'mnist_client100_dist0_beta0_noise0'
+        curve_names = [
+            'train_losses',
+            'test_losses',
+            'test_accs',
+        ]        
+        
+        ax1 = self.figure.add_subplot(311)
+        ax1.plot(x[0], y[0], linewidth=1)
+        plt.title(task + " (" + curve_names[0] + ")")
+        plt.xlabel("communication rounds")
+        plt.ylabel(curve_names[0])
+        ax = plt.gca()
+        plt.grid()
+        
+        ax2 = self.figure.add_subplot(312)
+        ax2.plot(x[1], y[1], linewidth=1)
+        plt.title(task + " (" + curve_names[1] + ")")
+        plt.xlabel("communication rounds")
+        plt.ylabel(curve_names[1])
+        ax = plt.gca()
+        plt.grid()
+        
+        ax3 = self.figure.add_subplot(313)
+        ax3.plot(x[2], y[2], linewidth=1)
+        plt.title(task + " (" + curve_names[2] + ")")
+        plt.xlabel("communication rounds")
+        plt.ylabel(curve_names[2])
+        ax = plt.gca()
+        plt.grid()  
+              
+        plt.tight_layout()        
+        
+        self.canvas.draw()        
+        os.chdir("../../..") 
+    
+    def save_plot(self):
+        now = datetime.now()
+        dt_string = now.strftime("%Y%m%d-%H%M%S")
+        plt.savefig(dt_string + "_fairness_results.jpg")    
+    
+    def go_back(self):
+        if self.parent != None:
+            self.parent.switch_panel(0)
