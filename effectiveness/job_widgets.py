@@ -1,6 +1,6 @@
 from PyQt5.QtCore import QTimer, pyqtSlot, QProcess
 from PyQt5.QtGui import QFont
-from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QProgressBar, QPlainTextEdit, QGridLayout,
+from PyQt5.QtWidgets import (QScrollArea, QStackedLayout, QWidget, QVBoxLayout, QProgressBar, QPlainTextEdit, QGridLayout,
     QHBoxLayout, QSpinBox, QComboBox, QLabel, QDoubleSpinBox,
     QPushButton, QFrame, QSizePolicy)
 
@@ -161,8 +161,12 @@ class GeneralJob(QWidget):
         self.manager = None
         self.status = "running"
 
-        general_job_layout = QGridLayout()
-        self.setLayout(general_job_layout)
+        self.layout = QStackedLayout()
+        self.setLayout(self.layout)
+
+        main_job = QWidget()
+        main_job_layout = QGridLayout()
+        main_job.setLayout(main_job_layout)
         
         progress_box = QHBoxLayout()
         self.current_action = QLabel()
@@ -185,9 +189,15 @@ class GeneralJob(QWidget):
         self.btn_cancel.pressed.connect(self.cancel)
         right_box.addWidget(self.btn_cancel)
 
-        general_job_layout.addLayout(progress_box, 0, 0, 1, 2)
-        general_job_layout.addWidget(self.text, 1, 0, 1, 1)
-        general_job_layout.addLayout(right_box, 1, 1, 1, 1)
+        main_job_layout.addLayout(progress_box, 0, 0, 1, 2)
+        main_job_layout.addWidget(self.text, 1, 0, 1, 1)
+        main_job_layout.addLayout(right_box, 1, 1, 1, 1)
+
+        self.individual_job = Clients(main_panel)
+        
+        self.layout.addWidget(main_job)
+        self.layout.addWidget(self.individual_job)
+        self.layout.setCurrentIndex(0)
     
     @pyqtSlot()
     def initialize(self):
@@ -200,7 +210,8 @@ class GeneralJob(QWidget):
 
     @pyqtSlot(str)
     def experiment_update_status(self, status):
-        self.track_progress(status)
+        percentage = self.track_progress(status)
+        self.track_client(status, percentage)
         self.text.appendPlainText(status)
 
     @pyqtSlot(int, QProcess.ExitStatus)
@@ -217,6 +228,7 @@ class GeneralJob(QWidget):
             self.current_action.setText('Experiment complete')
             self.btn_cancel.setParent(None)
             self.btn_extra_action.setText("View results")
+            self.status = "complete"
 
     def skip_dataset(self):
         self.progress.setValue(100)
@@ -263,10 +275,22 @@ class GeneralJob(QWidget):
             total_iterations = 3
             percentage = self.iteration * (100 / total_iterations) + self.round / total_rounds * (100 / total_iterations)
             self.progress.setValue(percentage)
+            return percentage
+        return None
+
+    def track_client(self, status, percentage):
+        re_client = re.findall(r'Client (\d+):', status)
+        re_accuracy = re.findall(r'accuracy ([0-9]*[.]?[0-9]+)', status)
+        re_losses = re.findall(r'loss ([0-9]*[.]?[0-9]+)', status)
+        for client, accuracy, loss in zip(re_client, re_accuracy, re_losses):
+            client_name = f"Client {client}"
+            if client_name in self.individual_job.clients:
+                self.individual_job.clients[client_name].update(percentage, accuracy, loss)
+        
 
     def extra_action(self):
         if self.status == "running":
-            pass
+            self.layout.setCurrentIndex(1)
         else:
             self.main_panel.switch_current_job_display(2)
 
@@ -283,6 +307,52 @@ class GeneralJob(QWidget):
         self.progress.setValue(0)
 
         self.main_panel.switch_current_job_display(0)
+
+class Clients(QScrollArea):
+    def __init__(self, main_panel):
+        super().__init__()
+
+        self.main_panel = main_panel
+
+        wrapper = QWidget()
+        layout = QGridLayout()
+        wrapper.setLayout(layout)
+
+        self.clients = {}
+
+        for i in range(self.main_panel.parameters_container.num_of_clients):
+            client_name = f"Client {i+1}"
+            object = self.IndividualClient(client_name)
+            self.clients[client_name] = object
+            layout.addWidget(object, i//5, i%5)
+
+        self.setWidget(wrapper)
+
+        
+
+    class IndividualClient(QWidget):
+        def __init__(self, name):
+            super().__init__()
+
+            layout = QVBoxLayout()
+            self.setLayout(layout)
+
+            client_name = QLabel(name)
+            self.progress = QProgressBar()
+            self.progress.setRange(0, 100)
+            self.progress.setValue(0)
+            self.accuracy = QLabel("Local accuracy: 0")
+            self.loss = QLabel("Local Loss: 0")
+            
+            layout.addWidget(client_name)
+            layout.addWidget(self.progress)
+            layout.addWidget(self.accuracy)
+            layout.addWidget(self.loss)
+
+        def update(self, progress, accuracy, loss):
+            self.progress.setValue(progress)
+            self.accuracy.setText(f"Local accuracy: {accuracy}")
+            self.loss.setText(f"Local Loss: {loss}")
 
 class Results(QWidget):
     def __init__(self, main_panel):
