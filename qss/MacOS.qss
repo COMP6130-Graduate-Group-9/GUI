@@ -110,7 +110,7 @@ QSpinBox::down-arrow, QDoubleSpinBox::down-arrow, QTimeEdit::down-arrow, QDateEd
     image: url(qss/QSS_IMG/go-down-symbolic.symbolic.png);
 }
 QProgressBar {
-    max-height: 8px;
+    max-height: 16px;
     text-align: center;
     font: italic bold 11px;
     color: #3d3d3d;
