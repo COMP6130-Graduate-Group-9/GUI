@@ -224,6 +224,9 @@ class Server:
     def evaluate(self, save=True, selected=False):
         # override evaluate function to log vae-loss.
         test_ids, test_samples, test_accs, test_losses = self.test(selected=selected)
+        for idx, val in enumerate(zip(test_accs, test_samples, test_losses)):
+            local_loss = val[1] * val[2].detach() / val[1]
+            print(f"Client {idx + 1}: accuracy {val[0] / val[1]}, loss {local_loss}")
         glob_acc = np.sum(test_accs)*1.0/np.sum(test_samples)
         glob_loss = np.sum([x * y.detach() for (x, y) in zip(test_samples, test_losses)]).item() / np.sum(test_samples)
         if save:
