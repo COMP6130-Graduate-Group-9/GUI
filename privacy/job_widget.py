@@ -9,15 +9,10 @@ class ParameterWidget(QWidget):
         self.dataset = "CIFAR10"
         self.cost_fn = "sim"
         self.indices = "def"
-        self.restarts = 32
+        self.restarts = 1
         self.target_id = -1
 
-        grid = QGridLayout()  
-        self.setLayout(grid)
-
-        model_box = QHBoxLayout()
-        model_input = QComboBox()
-        model_input.addItems([
+        model_list = [
             "ConvNet", "ConvNet8", "ConvNet16", "ConvNet32",
             "BeyondInferringMNIST", "BeyondInferringCifar",
             "MLP", "TwoLP", "ResNet20", "ResNet20-nostride", "ResNet20-10",
@@ -26,8 +21,20 @@ class ParameterWidget(QWidget):
             "ResNet18", "ResNet34", "ResNet50", "ResNet50-2",
             "ResNet101", "ResNet152", "MobileNet", "MNASNet",
             "DenseNet121", "DenseNet40", "DenseNet40-4", 
-            "SRNet3", "SRNet1", "iRevNet", "LetNetZhu"])
+            "SRNet3", "SRNet1", "iRevNet", "LetNetZhu"]
+        dataset_list = ["CIFAR10", "CIFAR100", "MNIST", "MNIST_GRAY", "ImageNet", "BSDS-SR", "BSDS-DN","BSDS-RGB"]
+
+        grid = QGridLayout()  
+        self.setLayout(grid)
+
+        model_box = QHBoxLayout()
+        model_input = QComboBox()
+        for model in model_list:
+            model_input.addItem(model, model)
         model_input.currentTextChanged.connect(self.model_text_changed)
+        curr_model_idx = model_input.findData(self.model)
+        print(curr_model_idx)
+        model_input.setCurrentIndex(curr_model_idx)
         model_label = QLabel("Model:")
         model_label.setBuddy(model_input)
         model_box.addWidget(model_label)
@@ -35,8 +42,11 @@ class ParameterWidget(QWidget):
 
         dataset_box = QHBoxLayout()
         dataset_input = QComboBox()
-        dataset_input.addItems(["CIFAR10", "CIFAR100", "MNIST", "MNIST_GRAY", "ImageNet", "BSDS-SR", "BSDS-DN","BSDS-RGB"])
+        for dataset in dataset_list:
+            dataset_input.addItem(dataset, dataset)
         dataset_input.currentTextChanged.connect(self.dataset_text_changed)
+        curr_dataset_idx = dataset_input.findData(self.dataset)
+        dataset_input.setCurrentIndex(curr_dataset_idx)
         dataset_label = QLabel("Dataset:")
         dataset_label.setBuddy(dataset_input)
         dataset_box.addWidget(dataset_label)
@@ -61,7 +71,7 @@ class ParameterWidget(QWidget):
         indices_box.addWidget(indices_input)
 
         restarts_box = QHBoxLayout()
-        restarts_input = QDoubleSpinBox()
+        restarts_input = QSpinBox()
         restarts_input.setValue(self.restarts)
         restarts_input.valueChanged.connect(lambda i: self.value_changed(i, "restarts"))
         restarts_label = QLabel("Restarts:")
@@ -70,7 +80,7 @@ class ParameterWidget(QWidget):
         restarts_box.addWidget(restarts_input)
 
         target_id_box = QHBoxLayout()
-        target_id_input = QDoubleSpinBox()
+        target_id_input = QSpinBox()
         target_id_input.setMinimum(-10)
         target_id_input.setValue(self.target_id)
         target_id_input.valueChanged.connect(lambda i: self.value_changed(i, "target_id"))

@@ -5,7 +5,7 @@ from PyQt5.QtWidgets import (QGridLayout, QGroupBox, QLabel, QVBoxLayout, QPushB
 import os
 import re
 
-from parameter_privacy import ParameterWidget
+from privacy import job_widget
 
 # A regular expression, to extract the % complete.
 
@@ -28,10 +28,10 @@ class PanelPrivacy(QGroupBox):
         self.p = None  # Default empty value.
         titleLabel = QLabel("Privacy")
         titleFont = QFont()
-        titleFont.setPointSize(24)
+        titleFont.setPointSize(20)
         titleLabel.setFont(titleFont)
 
-        self.parameters = ParameterWidget()
+        self.parameters = job_widget.ParameterWidget()
         self.btn_submit = QPushButton("Check parameters")
         self.btn_submit.pressed.connect(self.submit_job)
         self.btn_run_experiment = QPushButton("Run experiment")
