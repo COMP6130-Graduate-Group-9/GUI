@@ -1,4 +1,5 @@
 from PyQt5 import QtWidgets
+from PyQt5 import QtGui
 from PyQt5.QtCore import QPoint, QTimer, pyqtSlot, QProcess, Qt, QRect
 from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import (QScrollArea, QStackedLayout, QTableWidgetItem, QWidget, QVBoxLayout, QProgressBar, QPlainTextEdit, QGridLayout,
@@ -39,6 +40,7 @@ class Parameters(QWidget):
         self.setLayout(layout)
         
         description = QLabel("Please specify your parameters and submit the job")
+        description.setSizePolicy(QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum))
         layout.addWidget(description)
         grid = QGridLayout()
         layout.addLayout(grid)
@@ -117,13 +119,13 @@ class Parameters(QWidget):
 
         seperator_horizontal = QHSeperationLine()
 
-        grid.addLayout(dataset_box, 0, 0, 1, 1)
-        grid.addLayout(dataset_param_box, 0, 1, 1, 1)
-        grid.addWidget(seperator_horizontal, 1, 0, 1, 4)
-        grid.addLayout(num_of_clients_box, 2, 0)
-        grid.addLayout(learning_rate_box, 2, 1)
-        grid.addLayout(global_iterations_box, 2, 2)
-        grid.addLayout(total_epochs_box, 2, 3)
+        grid.addLayout(dataset_box, 0, 0, 2, 1)
+        grid.addLayout(dataset_param_box, 0, 1, 2, 1)
+        grid.addWidget(seperator_horizontal, 1, 0, 2, 4)
+        grid.addLayout(num_of_clients_box, 2, 0, 2, 1)
+        grid.addLayout(learning_rate_box, 2, 1, 2, 1)
+        grid.addLayout(global_iterations_box, 2, 2, 2, 1)
+        grid.addLayout(total_epochs_box, 2, 3, 2, 1)
 
     def value_changed(self, i, name):
         self.__dict__[name] = i
