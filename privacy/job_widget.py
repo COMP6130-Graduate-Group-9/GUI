@@ -1,9 +1,15 @@
-from PyQt5.QtWidgets import (QWidget, QGridLayout, QSpinBox, QLabel, QHBoxLayout,
-    QComboBox, QDoubleSpinBox)
+from PyQt5.QtCore import QTimer, pyqtSlot, QProcess
+from PyQt5.QtGui import QFont
+from PyQt5.QtWidgets import (QVBoxLayout, QWidget, QGridLayout, QSpinBox, QLabel, QHBoxLayout,
+    QComboBox, QPushButton, QProgressBar, QPlainTextEdit)
 
-class ParameterWidget(QWidget):
-    def __init__(self):
+from process_manager import ProcessManager
+
+class Parameters(QWidget):
+    def __init__(self, main_panel):
         super().__init__()
+
+        self.main_panel = main_panel
 
         self.model = "ResNet20-4"
         self.dataset = "CIFAR10"
@@ -27,13 +33,14 @@ class ParameterWidget(QWidget):
         grid = QGridLayout()  
         self.setLayout(grid)
 
+        description = QLabel("Please specify your parameters and submit the job")
+
         model_box = QHBoxLayout()
         model_input = QComboBox()
         for model in model_list:
             model_input.addItem(model, model)
         model_input.currentTextChanged.connect(self.model_text_changed)
         curr_model_idx = model_input.findData(self.model)
-        print(curr_model_idx)
         model_input.setCurrentIndex(curr_model_idx)
         model_label = QLabel("Model:")
         model_label.setBuddy(model_input)
@@ -89,12 +96,17 @@ class ParameterWidget(QWidget):
         target_id_box.addWidget(target_id_label)
         target_id_box.addWidget(target_id_input)
 
-        grid.addLayout(model_box, 0, 0)
-        grid.addLayout(dataset_box, 0, 1)
-        grid.addLayout(cost_fn_box, 1, 0)
-        grid.addLayout(indices_box, 1, 1)
-        grid.addLayout(restarts_box, 2, 0)
-        grid.addLayout(target_id_box, 2, 1)
+        btn_submit = QPushButton("SUBMIT")
+        btn_submit.pressed.connect(self.submit_job)
+
+        grid.addWidget(description, 0, 0, 1, 1)
+        grid.addLayout(model_box, 1, 0, 1, 1)
+        grid.addLayout(dataset_box, 1, 1, 1, 1)
+        grid.addLayout(cost_fn_box, 2, 0, 1, 1)
+        grid.addLayout(indices_box, 2, 1, 1, 1)
+        grid.addLayout(restarts_box, 3, 0, 1,1 )
+        grid.addLayout(target_id_box, 3, 1, 1, 1)
+        grid.addWidget(btn_submit, 4, 0, 1, 2)
 
     def value_changed(self, i, name):
         self.__dict__[name] = i
@@ -186,3 +198,125 @@ class ParameterWidget(QWidget):
             self.dataset = "BSDS-DN"
         elif dataset == "BSDS-RGB":
             self.dataset = "BSDS-RGB"
+
+    def submit_job(self):
+        self.main_panel.switch_current_job_display(1)
+
+        exec_dir = f"algorithms/invertingGradients"
+        return_path = "../../"
+        self.manager = ProcessManager(exec_dir, return_path)
+        self.manager.started.connect(self.main_panel.general_job_container.initialize)
+        self.manager.finished.connect(self.main_panel.general_job_container.complete)
+        self.manager.textChanged.connect(self.main_panel.general_job_container.update_status)
+
+        model = self.model
+        dataset = self.dataset
+        cost_fn = self.cost_fn
+        indices = self.indices
+        restarts = self.restarts
+        target_id = self.target_id
+        script = f"reconstruct_image.py --model {model} --dataset {dataset} --trained_model --cost_fn {cost_fn} --indices {indices} --restarts {restarts} --save_image --target_id {target_id}"
+        self.manager.run_script(script)
+
+class GeneralJob(QWidget):
+    def __init__(self, main_panel):
+        super().__init__()
+
+        self.main_panel = main_panel
+        self.iteration = 0
+
+        layout = QGridLayout()
+        self.setLayout(layout)
+
+        self.progress = QProgressBar()
+        self.progress.setRange(0, 100)
+
+        self.text = QPlainTextEdit()
+        self.text.setReadOnly(True)
+
+        right_box = QVBoxLayout()
+        self.timer = Timer()
+        right_box.addWidget(self.timer)
+        self.btn_view_results = QPushButton("View results")
+        self.btn_view_results.pressed.connect(self.view_results)
+        self.btn_view_results.setEnabled(False)
+        right_box.addWidget(self.btn_view_results)
+        self.btn_cancel = QPushButton("Cancel")
+        self.btn_cancel.pressed.connect(self.cancel)
+        right_box.addWidget(self.btn_cancel)
+
+        layout.addWidget(self.progress, 0, 0, 1, 5)
+        layout.addWidget(self.timer, 1, 0, 1, 1)
+        layout.addWidget(self.text, 1, 1, 1, 4)
+
+    @pyqtSlot()
+    def initialize(self):
+        self.progress.setValue(0)
+    
+    @pyqtSlot(str)
+    def update_status(self, status):
+        print(status)
+        self.text.appendPlainText(status)
+
+    @pyqtSlot(int, QProcess.ExitStatus)
+    def complete(self, exitCode, exitStatus):
+        if exitStatus == 0:
+            self.timer.stop()
+            self.progress.setValue(100)
+            self.btn_cancel.setParent(None)
+            self.btn_view_results.setEnabled(True)
+
+    def view_results(self):
+        pass
+
+    def cancel(self):
+        if self.manager:
+            self.manager.stop()
+            self.timer.stop()
+            self.timer.reset()
+
+        self.text.clear()
+        self.progress.setValue(0)
+
+        self.main_panel.switch_current_job_display(0)
+
+class Timer(QWidget):
+    def __init__(self):
+        super().__init__()
+
+        self.counter = 0
+        self.elapsed_time = None
+
+        layout = QVBoxLayout(self)
+
+        elapsed_time_label = QLabel()
+        elapsed_time_label.setText("Elapsed time")
+        self.time_display = QLabel()
+        self.time_display.setText("00:00:00")
+        timerFont = QFont()
+        timerFont.setPointSize(16)
+        self.time_display.setFont(timerFont)
+        layout.addWidget(elapsed_time_label)
+        layout.addWidget(self.time_display)
+
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.display)
+
+    def start(self):
+        self.timer.start(1000)
+
+    def stop(self):
+        self.timer.stop()
+
+    def reset(self):
+        self.counter = 0
+        self.elapsed_time = None
+        self.time_display.setText("00:00:00")
+    
+    def display(self):
+        self.counter += 1
+        second = self.counter % 60
+        minute = (self.counter // 60) % 60
+        hour = self.counter // 3600
+        self.elapsed_time = f"{hour:02}:{minute:02}:{second:02}"
+        self.time_display.setText(self.elapsed_time)
