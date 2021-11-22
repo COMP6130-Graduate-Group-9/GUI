@@ -171,7 +171,7 @@ class GradientReconstructor():
                         x_trial.data = torch.max(torch.min(x_trial, (1 - dm) / ds), -dm / ds)
 
                     if (iteration + 1 == max_iterations) or iteration % 500 == 0:
-                        print(f'It: {iteration}. Rec. loss: {rec_loss.item():2.4f}.')
+                        print(f'It: {iteration}. Rec. loss: {rec_loss.item():2.4f}.', flush=True)
 
                     if (iteration + 1) % 500 == 0:
                         if self.config['filter'] == 'none':
