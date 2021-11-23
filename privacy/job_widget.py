@@ -1,8 +1,9 @@
-from PyQt5.QtCore import QTimer, pyqtSlot, QProcess
-from PyQt5.QtGui import QFont
+from PyQt5.QtCore import QTimer, pyqtSlot, QProcess, QRect, QPoint
+from PyQt5.QtGui import QFont, QPixmap
 from PyQt5.QtWidgets import (QVBoxLayout, QWidget, QGridLayout, QSpinBox, QLabel, QHBoxLayout,
-    QComboBox, QPushButton, QProgressBar, QPlainTextEdit)
+    QComboBox, QPushButton, QProgressBar, QPlainTextEdit, QToolTip)
 
+import re, os, time
 from process_manager import ProcessManager
 
 class Parameters(QWidget):
@@ -223,7 +224,9 @@ class GeneralJob(QWidget):
         super().__init__()
 
         self.main_panel = main_panel
-        self.iteration = 0
+        self.rec_loss = None
+        self.output_filename = ''
+        self.ground_truth_filename = ''
 
         layout = QGridLayout()
         self.setLayout(layout)
@@ -246,16 +249,19 @@ class GeneralJob(QWidget):
         right_box.addWidget(self.btn_cancel)
 
         layout.addWidget(self.progress, 0, 0, 1, 5)
-        layout.addWidget(self.timer, 1, 0, 1, 1)
-        layout.addWidget(self.text, 1, 1, 1, 4)
+        layout.addWidget(self.text, 1, 0, 1, 1)
+        layout.addLayout(right_box, 1, 1, 1, 1)
 
     @pyqtSlot()
     def initialize(self):
         self.progress.setValue(0)
+        self.timer.start()
     
     @pyqtSlot(str)
     def update_status(self, status):
         print(status)
+        self.track_global_result(status)
+        self.track_image_location(status)
         self.text.appendPlainText(status)
 
     @pyqtSlot(int, QProcess.ExitStatus)
@@ -266,19 +272,132 @@ class GeneralJob(QWidget):
             self.btn_cancel.setParent(None)
             self.btn_view_results.setEnabled(True)
 
+            self.main_panel.results_container.elapsed_time = self.timer.elapsed_time
+            self.main_panel.results_container.rec_loss = self.rec_loss
+            self.main_panel.results_container.ground_truth_filename = self.ground_truth_filename
+            self.main_panel.results_container.output_filename = self.output_filename
+            self.main_panel.results_container.populate_content()
+
     def view_results(self):
-        pass
+        self.main_panel.switch_current_job_display(2)
 
     def cancel(self):
-        if self.manager:
-            self.manager.stop()
-            self.timer.stop()
-            self.timer.reset()
-
-        self.text.clear()
-        self.progress.setValue(0)
+        if self.main_panel.parameters_container.manager:
+            self.main_panel.parameters_container.manager.stop()
+        self.reset()
 
         self.main_panel.switch_current_job_display(0)
+
+    def reset(self):
+        self.timer.stop()
+        self.timer.reset()
+        self.text.clear()
+        self.progress.setValue(0)
+        self.btn_cancel.setParent(self)
+        self.btn_view_results.setEnabled(False)
+
+    def track_global_result(self, status):
+        re_iteration = re.findall(r'It: (\d+)\.', status)
+        re_rec_loss = re.findall(r'Rec. loss: ([0-9]*[.]?[0-9]+)', status)
+        if len(re_iteration) > 0:
+            percentage = int(re_iteration[0]) / 3_000 * 100
+            self.progress.setValue(percentage)
+        if len(re_rec_loss) > 0:
+            self.rec_loss = re_rec_loss[0]
+
+    def track_image_location(self, status):
+        re_output_filename = re.findall(r'Output image saved at: images/(.*\.png) ', status)
+        re_ground_truth_filename = re.findall(r'Ground truth image saved at: images/(.*\.png) ', status)
+        if len(re_output_filename) > 0:
+            self.output_filename = re_output_filename[0]
+        if len(re_ground_truth_filename) > 0:
+            self.ground_truth_filename = re_ground_truth_filename[0]
+
+
+class Results(QWidget):
+    def __init__(self, main_panel):
+        super().__init__()
+
+        self.main_panel = main_panel
+        self.rec_loss = None
+        self.elapsed_time = None
+        self.output_filename = None
+        self.ground_truth_filename = None
+        self.parameters = {
+            'model': main_panel.parameters_container.model,
+            'dataset': main_panel.parameters_container.dataset,
+            'cost_fn': main_panel.parameters_container.cost_fn,
+            'indices': main_panel.parameters_container.indices,
+            'restarts': main_panel.parameters_container.restarts,
+            'target_id': main_panel.parameters_container.target_id
+        }
+
+        layout = QGridLayout()
+        self.setLayout(layout)
+
+        ground_truth_title = QLabel("Ground truth")
+        self.ground_truth_image = QLabel()
+
+        output_title = QLabel("Output")
+        self.output_image = QLabel()
+
+        self.elapsed_time_display = QLabel()
+        self.reconstruct_loss_display = QLabel()
+
+        self.btn_save_results = QPushButton("Save results")
+        self.btn_save_results.clicked.connect(self.save_results)
+        btn_restart = QPushButton("Restart")
+        btn_restart.clicked.connect(self.restart)
+
+        layout.addWidget(ground_truth_title, 0, 0, 1, 1)
+        layout.addWidget(output_title, 0, 1, 1, 1)
+        layout.addWidget(self.ground_truth_image, 1, 0, 1, 1)
+        layout.addWidget(self.output_image, 1, 1, 1, 1)
+        layout.addWidget(self.elapsed_time_display, 2, 0, 1, 1)
+        layout.addWidget(self.reconstruct_loss_display, 2, 1, 1, 1)
+        layout.addWidget(self.btn_save_results, 3, 0, 1, 1)
+        layout.addWidget(btn_restart, 3, 1, 1, 1)
+
+    def save_results(self):
+        logs_path = os.path.join(os.getcwd(), 'logs')
+        if not os.path.exists(logs_path):
+            os.mkdir(logs_path)
+
+        lines = [
+            'Result',
+            f'Recontruction Loss: {self.rec_loss}',
+            f'Elapsed time: {self.elapsed_time}',
+            f'Ground truth image saved to: algorithms/invertingGradients/images/{self.ground_truth_filename}',
+            f'Output image saved to: algorithms/invertingGradients/images/{self.output_filename}',
+            '',
+            'Parameters'
+        ]
+        lines += [f'{p[0]}: {p[1]}' for p in self.parameters.items()]
+        t = time.localtime()
+        current_time = time.strftime("%m-%d-%Y_%H-%M-%S", t)
+        filename = f'privacy-{current_time}.txt'
+        file_path = os.path.join(logs_path, filename)
+        with open(file_path, 'w') as f:
+            f.write('\n'.join(lines))
+
+        QToolTip.showText(self.btn_save_results.mapToGlobal(QPoint(0,0)), f'File saved to {file_path}', self.btn_save_results, QRect(), 1000)
+
+    def restart(self):
+        if self.main_panel.parameters_container.manager:
+            self.main_panel.parameters_container.manager.stop()
+        self.main_panel.general_job_container.reset()
+
+        self.main_panel.switch_current_job_display(0)
+
+    def populate_content(self):
+        ground_truth_pixmap = QPixmap(f"algorithms/invertingGradients/images/{self.ground_truth_filename}")
+        self.ground_truth_image.setPixmap(ground_truth_pixmap)
+
+        output_pixmap = QPixmap(f"algorithms/invertingGradients/images/{self.output_filename}")
+        self.output_image.setPixmap(output_pixmap)
+
+        self.elapsed_time_display.setText(f"Elapsed time: {self.elapsed_time}")
+        self.reconstruct_loss_display.setText(f"Reconstruct loss: {self.rec_loss}")
 
 class Timer(QWidget):
     def __init__(self):

@@ -19,9 +19,12 @@ class PanelPrivacy(QGroupBox):
         self.parameters_container = job_widget.Parameters(self)
         # main job display
         self.general_job_container = job_widget.GeneralJob(self)
+        # results display
+        self.results_container = job_widget.Results(self)
         
         self.current_job_display.addWidget(self.parameters_container)
         self.current_job_display.addWidget(self.general_job_container)
+        self.current_job_display.addWidget(self.results_container)
         self.current_job_display.setCurrentIndex(0)
 
         # layout

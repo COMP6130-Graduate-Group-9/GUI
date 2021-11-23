@@ -135,7 +135,7 @@ if __name__ == "__main__":
                           lr=0.1,
                           optim=args.optimizer,
                           restarts=args.restarts,
-                          max_iterations=24_000,
+                          max_iterations=3_000,
                           total_variation=args.tv,
                           init='randn',
                           filter='none',
@@ -217,13 +217,13 @@ if __name__ == "__main__":
                         f'{args.model}_{args.cost_fn}-{args.target_id}.png')
         output_full_path = os.path.join(args.image_path, rec_filename)
         torchvision.utils.save_image(output_denormalized, output_full_path)
-        print(f"Output image saved at: {output_full_path}")
+        print(f"Output image saved at: {output_full_path} ")
 
         gt_denormalized = torch.clamp(ground_truth * ds + dm, 0, 1)
         gt_filename = (f'{validloader.dataset.classes[labels][0]}_ground_truth-{args.target_id}.png')
         gt_full_path = os.path.join(args.image_path, gt_filename)
         torchvision.utils.save_image(gt_denormalized, gt_full_path)
-        print(f"Ground truth image saved at: {gt_full_path}")
+        print(f"Ground truth image saved at: {gt_full_path} ")
     else:
         rec_filename = None
         gt_filename = None
