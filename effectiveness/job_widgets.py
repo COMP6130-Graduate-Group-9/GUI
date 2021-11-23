@@ -182,19 +182,19 @@ class GeneralJob(QWidget):
         self.text = QPlainTextEdit()
         self.text.setReadOnly(True)
 
-        right_box = QVBoxLayout()
+        self.right_box = QVBoxLayout()
         self.timer = Timer()
-        right_box.addWidget(self.timer)
+        self.right_box.addWidget(self.timer)
         self.btn_extra_action = QPushButton("View job")
         self.btn_extra_action.pressed.connect(self.extra_action)
-        right_box.addWidget(self.btn_extra_action)
+        self.right_box.addWidget(self.btn_extra_action)
         self.btn_cancel = QPushButton("Cancel")
         self.btn_cancel.pressed.connect(self.cancel)
-        right_box.addWidget(self.btn_cancel)
+        self.right_box.addWidget(self.btn_cancel)
 
         main_job_layout.addLayout(progress_box, 0, 0, 1, 2)
         main_job_layout.addWidget(self.text, 1, 0, 1, 1)
-        main_job_layout.addLayout(right_box, 1, 1, 1, 1)
+        main_job_layout.addLayout(self.right_box, 1, 1, 1, 1)
 
         self.individual_job = Clients(main_panel)
         
@@ -308,16 +308,23 @@ class GeneralJob(QWidget):
     def cancel(self):
         if self.main_panel.parameters_container.manager:
             self.main_panel.parameters_container.manager.stop()
+        self.reset()
+
+        self.main_panel.switch_current_job_display(0)
+
+    def reset(self):
         if self.manager:
             self.manager.stop()
-            self.timer.stop()
-            self.timer.reset()
+        self.timer.stop()
+        self.timer.reset()
 
+        self.status = "running"
         self.text.clear()
         self.current_action.setText('Generating dataset.....')
         self.progress.setValue(0)
-
-        self.main_panel.switch_current_job_display(0)
+        self.right_box.addWidget(self.btn_cancel)
+        self.btn_extra_action.setText("View job")
+        self.individual_job.reset_all_clients()
 
 class Clients(QWidget):
     def __init__(self, main_panel):
@@ -354,9 +361,13 @@ class Clients(QWidget):
     def back_to_main_job(self):
         self.main_panel.general_job_container.layout.setCurrentIndex(0)
 
+    def reset_all_clients(self):
+        for c in self.clients.values():
+            c.reset()
+
     def complete_all_clients(self):
         for c in self.clients.values():
-            c.progress.setValue(100)
+            c.complete()
 
     class IndividualClient(QWidget):
         def __init__(self, name):
@@ -381,6 +392,14 @@ class Clients(QWidget):
             self.progress.setValue(progress)
             self.accuracy.setText(f"Local accuracy: {float(accuracy):.4f}")
             self.loss.setText(f"Local Loss: {float(loss):.2f}")
+
+        def reset(self):
+            self.progress.setValue(0)
+            self.accuracy.setText("Local accuracy: 0")
+            self.loss.setText("Local Loss: 0")
+
+        def complete(self):
+            self.progress.setValue(100)
 
 class Results(QWidget):
     def __init__(self, main_panel):
@@ -470,6 +489,10 @@ class Results(QWidget):
         QToolTip.showText(self.btn_save_results.mapToGlobal(QPoint(0,0)), f'File saved to {file_path}', self.btn_save_results, QRect(), 1000)
     
     def return_to_parameters(self):
+        if self.main_panel.parameters_container.manager:
+            self.main_panel.parameters_container.manager.stop()
+        self.main_panel.general_job_container.reset()
+
         self.main_panel.switch_current_job_display(0)
 
 
