@@ -1,0 +1,67 @@
+Currently evaluating -------------------------------:
+Sunday, 21. November 2021 04:25PM
+CPUs: 8, GPUs: 0 on LAPTOP-BQ838413.
+Namespace(model='ResNet20-4', dataset='CIFAR10', dtype='float', trained_model=True, epochs=120, accumulation=0, num_images=1, target_id=-1, label_flip=False, optim='ours', restarts=1, cost_fn='sim', indices='def', weights='equal', optimizer='adam', signed=True, boxed=True, scoring_choice='loss', init='randn', tv=0.0001, save_image=True, image_path='images/', model_path='models/', table_path='tables/', data_path='~/data', name='iv', deterministic=False, dryrun=False)
+Files already downloaded and verified
+Files already downloaded and verified
+Model initialized with random key 607755144.
+Full gradient norm is 2.966950e+00.
+It: 0. Rec. loss: 0.0419.
+It: 500. Rec. loss: 0.0180.
+It: 1000. Rec. loss: 0.0172.
+It: 1500. Rec. loss: 0.0169.
+It: 2000. Rec. loss: 0.0163.
+It: 2500. Rec. loss: 0.0158.
+It: 3000. Rec. loss: 0.0170.
+It: 3500. Rec. loss: 0.0172.
+It: 4000. Rec. loss: 0.0171.
+It: 4500. Rec. loss: 0.0148.
+It: 5000. Rec. loss: 0.0154.
+It: 5500. Rec. loss: 0.0154.
+It: 6000. Rec. loss: 0.0141.
+It: 6500. Rec. loss: 0.0161.
+It: 7000. Rec. loss: 0.0155.
+It: 7500. Rec. loss: 0.0149.
+It: 8000. Rec. loss: 0.0165.
+It: 8500. Rec. loss: 0.0144.
+It: 9000. Rec. loss: 0.0142.
+It: 9500. Rec. loss: 0.0117.
+It: 10000. Rec. loss: 0.0136.
+It: 10500. Rec. loss: 0.0120.
+It: 11000. Rec. loss: 0.0129.
+It: 11500. Rec. loss: 0.0132.
+It: 12000. Rec. loss: 0.0125.
+It: 12500. Rec. loss: 0.0124.
+It: 13000. Rec. loss: 0.0113.
+It: 13500. Rec. loss: 0.0110.
+It: 14000. Rec. loss: 0.0108.
+It: 14500. Rec. loss: 0.0106.
+It: 15000. Rec. loss: 0.0096.
+It: 15500. Rec. loss: 0.0099.
+It: 16000. Rec. loss: 0.0085.
+It: 16500. Rec. loss: 0.0089.
+It: 17000. Rec. loss: 0.0095.
+It: 17500. Rec. loss: 0.0100.
+It: 18000. Rec. loss: 0.0109.
+It: 18500. Rec. loss: 0.0102.
+It: 19000. Rec. loss: 0.0102.
+It: 19500. Rec. loss: 0.0120.
+It: 20000. Rec. loss: 0.0115.
+It: 20500. Rec. loss: 0.0117.
+It: 21000. Rec. loss: 0.0109.
+It: 21500. Rec. loss: 0.0113.
+It: 22000. Rec. loss: 0.0108.
+It: 22500. Rec. loss: 0.0113.
+It: 23000. Rec. loss: 0.0116.
+It: 23500. Rec. loss: 0.0119.
+It: 23999. Rec. loss: 0.0114.
+Choosing optimal result ...
+Optimal result score: 0.0112
+Total time: 5216.094462394714.
+Rec. loss: 0.0112 | MSE: 0.2626 | PSNR: 17.83 | FMSE: 1.9283e-03 |
+
+Results saved to tables/table_exp_iv.csv.
+Sunday, 21. November 2021 05:52PM
+---------------------------------------------------
+Finished computations with time: 1:26:57.776683
+-------------Job finished.-------------------------
