@@ -11,6 +11,8 @@ from dataset.pipa import Annotations  # legacy to correctly load dataset.
 from helper import Helper
 from utils.utils import *
 
+from torchvision.utils import save_image
+
 logger = logging.getLogger('logger')
 
 
@@ -44,6 +46,13 @@ def test(hlpr: Helper, epoch, backdoor=False):
                 batch = hlpr.attack.synthesizer.make_backdoor_batch(batch,
                                                                     test=True,
                                                                     attack=True)
+            if i == 0:
+                images_path = os.path.join(os.getcwd(), 'images') 
+                if not os.path.isdir(images_path):
+                    os.makedir(images_path)
+                for j in range(3):
+                    img = batch.inputs[j]
+                    save_image(img, os.path.join(images_path, f'sample-{j+1}.png'))
 
             outputs = model(batch.inputs)
             hlpr.task.accumulate_metrics(outputs=outputs, labels=batch.labels)
