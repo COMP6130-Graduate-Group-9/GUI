@@ -52,6 +52,7 @@ class MainWindow(QDialog):
 
         robustnessComboBox = QComboBox()
         robustnessComboBox.addItems(["Backdoor Attack"])
+        robustnessComboBox.currentTextChanged.connect(self.panelRobustness.switch_type)
         # round border for dropdown
         robustnessComboBox.setStyleSheet(
             "border-top-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 #c1c9cf, stop:1 #d2d8dd);"
@@ -79,13 +80,13 @@ class MainWindow(QDialog):
         panelEffectiveness.setObjectName("panelEffectiveness")
         panelPrivacy = PanelPrivacy()
         panelPrivacy.setObjectName("panelPrivacy")
-        panelRobustness = PanelRobustness()
-        panelRobustness.setObjectName("panelRobustness")
+        self.panelRobustness = PanelRobustness()
+        self.panelRobustness.setObjectName("panelRobustness")
         panelFairness = PanelFairness()
         panelFairness.setObjectName("panelFairness")
         self.panelDisplay.addWidget(panelEffectiveness)
         self.panelDisplay.addWidget(panelPrivacy)
-        self.panelDisplay.addWidget(panelRobustness)
+        self.panelDisplay.addWidget(self.panelRobustness)
         self.panelDisplay.addWidget(panelFairness)
         self.panelDisplay.setCurrentIndex(0)
 
