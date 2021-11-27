@@ -1,11 +1,13 @@
-from PyQt5.QtCore import pyqtSlot, QProcess, QTimer
-from PyQt5.QtGui import QFont
+from PyQt5.QtCore import pyqtSlot, QProcess, QPoint, QRect
+from PyQt5.QtGui import QFont, QPixmap
 from PyQt5.QtWidgets import (QStackedLayout, QWidget, QGridLayout, QLabel, QHBoxLayout,
     QComboBox, QSpinBox, QPushButton, QVBoxLayout, QProgressBar,
-    QPlainTextEdit, QDoubleSpinBox)
+    QPlainTextEdit, QDoubleSpinBox, QTableWidget, QSizePolicy,
+    QTableWidgetItem, QToolTip)
 
-import yaml, re, os
-from process_manager import ProcessManager
+import yaml, re, os, time
+from util.process_manager import ProcessManager
+from util.timer import Timer
 
 class Container(QWidget):
     def __init__(self, parent=None):
@@ -38,6 +40,7 @@ class Parameters(QWidget):
         self.task = "MNIST"
         self.learning_rate = 0.01
         self.epochs = 5
+        self.backdoor_label = None
 
         task_list = [
             "MNIST"
@@ -96,6 +99,7 @@ class Parameters(QWidget):
     def submit_job(self):
         with open('robustness/params.yaml') as f:
             params = yaml.load(f, Loader=yaml.FullLoader)
+            self.backdoor_label = params['backdoor_label']
             params['task'] = self.task
             params['lr'] = self.learning_rate
             params['epochs'] = self.epochs
@@ -164,29 +168,34 @@ class GeneralJob(QWidget):
             self.btn_cancel.setParent(None)
             self.btn_view_results.setEnabled(True)
 
-            self.main_panel.results_container.elapsed_time = self.timer.elapsed_time
-            self.main_panel.results_container.rec_loss = self.rec_loss
-            self.main_panel.results_container.ground_truth_filename = self.ground_truth_filename
-            self.main_panel.results_container.output_filename = self.output_filename
-            self.main_panel.results_container.populate_content()
+            self.main_panel.results.elapsed_time = self.timer.elapsed_time
+            self.main_panel.results.populate_content()
 
     def view_results(self):
-        pass
+        self.main_panel.switch_current_job_display(2)
 
     def cancel(self):
-        pass
+        if self.main_panel.parameters.manager:
+            self.main_panel.parameters.manager.stop()
+        self.reset()
+
+        self.main_panel.switch_current_job_display(0)
 
     def reset(self):
-        pass
+        self.timer.stop()
+        self.timer.reset()
+        self.text.clear()
+        self.progress.setValue(0)
+        self.btn_cancel.setParent(self)
+        self.btn_view_results.setEnabled(False)
 
     def track_global_result(self, status):
-        re_iteration = re.findall(r'It: (\d+)\.', status)
-        re_rec_loss = re.findall(r'Rec. loss: ([0-9]*[.]?[0-9]+)', status)
+        re_iteration = re.findall(r'Epoch:\s+(\d+)\.', status)
+        epoch = self.main_panel.parameters.epochs
         if len(re_iteration) > 0:
-            percentage = int(re_iteration[0]) / 3_000 * 100
+            percentage = int(re_iteration[0]) - 1 / epoch * 100
+            print(epoch, percentage)
             self.progress.setValue(percentage)
-        if len(re_rec_loss) > 0:
-            self.rec_loss = re_rec_loss[0]
 
 class Results(QWidget):
     def __init__(self, main_panel):
@@ -194,43 +203,99 @@ class Results(QWidget):
 
         self.main_panel = main_panel
 
-class Timer(QWidget):
-    def __init__(self):
-        super().__init__()
+        grid = QGridLayout()
+        self.setLayout(grid)
 
-        self.counter = 0
-        self.elapsed_time = None
+        sample1_box = QHBoxLayout()
+        self.sample1_image = QLabel()
+        self.sample1_label = QLabel()
+        sample1_box.addWidget(self.sample1_image)
+        sample1_box.addWidget(self.sample1_label)
 
-        layout = QVBoxLayout(self)
+        sample2_box = QHBoxLayout()
+        self.sample2_image = QLabel()
+        self.sample2_label = QLabel()
+        sample2_box.addWidget(self.sample2_image)
+        sample2_box.addWidget(self.sample2_label)
 
-        elapsed_time_label = QLabel()
-        elapsed_time_label.setText("Elapsed time")
-        self.time_display = QLabel()
-        self.time_display.setText("00:00:00")
-        timerFont = QFont()
-        timerFont.setPointSize(16)
-        self.time_display.setFont(timerFont)
-        layout.addWidget(elapsed_time_label)
-        layout.addWidget(self.time_display)
+        sample3_box = QHBoxLayout()
+        self.sample3_image = QLabel()
+        self.sample3_label = QLabel()
+        sample3_box.addWidget(self.sample3_image)
+        sample3_box.addWidget(self.sample3_label)
 
-        self.timer = QTimer()
-        self.timer.timeout.connect(self.display)
+        self.parameters = {
+            'Dataset': main_panel.parameters.task,
+            'Learning rate': main_panel.parameters.learning_rate,
+            'Total epochs': main_panel.parameters.epochs
+        }
+        
+        self.table = QTableWidget(self)
+        self.table.setColumnCount(2)
+        self.table.setRowCount(4)
+        sizePolicy = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Preferred)
+        self.table.setSizePolicy(sizePolicy)
+        
+        for idx, val in enumerate(self.parameters.items()):
+            self.table.setItem(idx, 0, QTableWidgetItem(val[0]))
+            self.table.setItem(idx, 1, QTableWidgetItem(str(val[1])))
 
-    def start(self):
-        self.timer.start(1000)
+        self.btn_save_results = QPushButton("Save results")
+        self.btn_save_results.clicked.connect(self.save_results)
+        btn_restart = QPushButton("Restart")
+        btn_restart.clicked.connect(self.return_to_parameters)
 
-    def stop(self):
-        self.timer.stop()
+        grid.addLayout(sample1_box, 0, 0, 1, 1)
+        grid.addLayout(sample2_box, 1, 0, 1, 1)
+        grid.addLayout(sample3_box, 2, 0, 1, 1)
+        grid.addWidget(self.table, 0, 1, 3, 1)
+        grid.addWidget(self.btn_save_results, 3, 0, 1, 1)
+        grid.addWidget(btn_restart, 3, 1, 1, 1)
+        
 
-    def reset(self):
-        self.counter = 0
-        self.elapsed_time = None
-        self.time_display.setText("00:00:00")
+    def populate_content(self):
+        sample1_pixmap = QPixmap(f"algorithms/backdoors101/images/sample-1.png")
+        self.sample1_image.setPixmap(sample1_pixmap)
+        sample2_pixmap = QPixmap(f"algorithms/backdoors101/images/sample-2.png")
+        self.sample2_image.setPixmap(sample2_pixmap)
+        sample3_pixmap = QPixmap(f"algorithms/backdoors101/images/sample-3.png")
+        self.sample3_image.setPixmap(sample3_pixmap)
+        self.sample1_label.setText(f"Backdoor label: {self.main_panel.parameters.backdoor_label}")
+        self.sample2_label.setText(f"Backdoor label: {self.main_panel.parameters.backdoor_label}")
+        self.sample3_label.setText(f"Backdoor label: {self.main_panel.parameters.backdoor_label}")
+
+        self.table.setItem(3, 0, QTableWidgetItem('Elapsed time'))
+        self.table.setItem(3, 1, QTableWidgetItem(self.elapsed_time))
+        self.table.resizeColumnsToContents()
+        self.table.resizeRowsToContents()
+        # self.reconstruct_loss_display.setText(f"Reconstruct loss: {self.rec_loss}")
+
+    def save_results(self):
+        logs_path = os.path.join(os.getcwd(), 'logs')
+        if not os.path.exists(logs_path):
+            os.mkdir(logs_path)
+
+        lines = [
+            'Result',
+            # f'Accuracy: {self.accuracy}',
+            # f'Loss: {self.loss}',
+            f'Elapsed time: {self.elapsed_time}',
+            '',
+            'Parameters'
+        ]
+        lines += [f'{p[0]}: {p[1]}' for p in self.parameters.items()]
+        t = time.localtime()
+        current_time = time.strftime("%m-%d-%Y_%H-%M-%S", t)
+        filename = f'robustness-backdoor-attack-{current_time}.txt'
+        file_path = os.path.join(logs_path, filename)
+        with open(file_path, 'w') as f:
+            f.write('\n'.join(lines))
+
+        QToolTip.showText(self.btn_save_results.mapToGlobal(QPoint(0,0)), f'File saved to {file_path}', self.btn_save_results, QRect(), 1000)
     
-    def display(self):
-        self.counter += 1
-        second = self.counter % 60
-        minute = (self.counter // 60) % 60
-        hour = self.counter // 3600
-        self.elapsed_time = f"{hour:02}:{minute:02}:{second:02}"
-        self.time_display.setText(self.elapsed_time)
+    def return_to_parameters(self):
+        if self.main_panel.parameters.manager:
+            self.main_panel.parameters.manager.stop()
+        self.main_panel.general_job.reset()
+
+        self.main_panel.switch_current_job_display(0)
