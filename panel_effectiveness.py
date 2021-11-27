@@ -6,7 +6,6 @@ from PyQt5.QtWidgets import (QGroupBox, QLabel, QStackedLayout, QVBoxLayout, QPu
 import os
 
 from effectiveness import job_widgets
-from process_manager import ProcessManager
 
 class PanelEffectiveness(QGroupBox):
     def __init__(self, parent=None):
