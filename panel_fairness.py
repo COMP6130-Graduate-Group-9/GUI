@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from pathlib import Path
 from datetime import datetime
-import result_analysis
+from fairness import result_analysis
 import os
 
 class PanelFairness(QGroupBox):
@@ -292,6 +292,7 @@ class Results(PanelFairness):
             'test_accs',
         ]        
         
+        # train losses
         ax1 = self.figure.add_subplot(311)
         ax1.plot(x[0], y[0], linewidth=1)
         plt.title(task + " (" + curve_names[0] + ")")
@@ -300,6 +301,7 @@ class Results(PanelFairness):
         ax = plt.gca()
         plt.grid()
         
+        # test losses
         ax2 = self.figure.add_subplot(312)
         ax2.plot(x[1], y[1], linewidth=1)
         plt.title(task + " (" + curve_names[1] + ")")
@@ -308,6 +310,7 @@ class Results(PanelFairness):
         ax = plt.gca()
         plt.grid()
         
+        # test accuracy
         ax3 = self.figure.add_subplot(313)
         ax3.plot(x[2], y[2], linewidth=1)
         plt.title(task + " (" + curve_names[2] + ")")

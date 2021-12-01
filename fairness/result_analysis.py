@@ -136,7 +136,8 @@ def create_graphs():
     task = 'mnist_client100_dist0_beta0_noise0'
     headers = [
         'fedavg',
-        # 'fedprox',
+        'fedfv',
+        'fedprox',
     ]
     flt = {
         # 'E': '5',
@@ -165,15 +166,18 @@ def create_graphs():
     ]
     # create legends
     legends = [records[i] for i in range(len(records))]
-       
+    
+    # train losses   
     ax1, x1, y1 = draw_curve(dicts, curve_names[0], legends)
     xs.append(x1)
     ys.append(y1)
     
+    # test losses
     ax2, x2, y2 = draw_curve(dicts, curve_names[1], legends)    
     xs.append(x2)
     ys.append(y2) 
     
+    # test accuracy
     ax3, x3, y3 = draw_curve(dicts, curve_names[2], legends)
     xs.append(x3)
     ys.append(y3)
