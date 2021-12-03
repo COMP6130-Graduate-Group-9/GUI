@@ -42,6 +42,7 @@ class Parameters(QWidget):
         self.setLayout(grid)
 
         description = QLabel("Please specify your parameters and submit the job")
+        description.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
 
         experiment_list = [
             "Label Flipping Attack Feasibility",
