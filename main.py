@@ -51,7 +51,12 @@ class MainWindow(QDialog):
         radioButtonEffectiveness.setChecked(True)
 
         robustnessComboBox = QComboBox()
-        robustnessComboBox.addItems(["Backdoor Attack"])
+        robustnessComboBox.addItems(
+            [
+                "Backdoor Attack",
+                "Data Poisoning Attacks"
+            ]
+        )
         robustnessComboBox.currentTextChanged.connect(self.panelRobustness.switch_type)
         # round border for dropdown
         robustnessComboBox.setStyleSheet(
