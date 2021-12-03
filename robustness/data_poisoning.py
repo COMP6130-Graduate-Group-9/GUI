@@ -374,7 +374,7 @@ class Results(QWidget):
         lines += [f'{p[0]}: {p[1]}' for p in self.parameters.items()]
         t = time.localtime()
         current_time = time.strftime("%m-%d-%Y_%H-%M-%S", t)
-        filename = f'robustness-data-poisoning-{current_time}.txt'
+        filename = f'robustness-data-poisoning-exp_{self.main_panel.parameters.experiment}-{current_time}.txt'
         file_path = os.path.join(logs_path, filename)
         with open(file_path, 'w') as f:
             f.write('\n'.join(lines))
