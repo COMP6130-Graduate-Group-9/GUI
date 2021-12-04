@@ -54,7 +54,8 @@ class MainWindow(QDialog):
         robustnessComboBox.addItems(
             [
                 "Backdoor Attack",
-                "Data Poisoning Attacks"
+                "Data Poisoning Attacks",
+                "Model Poisoning Attacks"
             ]
         )
         robustnessComboBox.currentTextChanged.connect(self.panelRobustness.switch_type)
