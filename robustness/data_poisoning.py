@@ -78,20 +78,13 @@ class Parameters(QWidget):
         exec_dir = f"algorithms/DataPoisoning_FL"
         return_path = "../../"
         self.manager = ProcessManager(exec_dir, return_path)
-        self.manager.started.connect(self.main_panel.general_job.initialize)
-        self.manager.finished.connect(self.main_panel.general_job.complete)
-        self.manager.textChanged.connect(self.main_panel.general_job.update_status)
+        self.manager.started.connect(self.main_panel.general_job.generate_data_distribution_initialize)
+        self.manager.finished.connect(self.main_panel.general_job.generate_data_distribution_complete)
+        self.manager.textChanged.connect(self.main_panel.general_job.generate_data_distribution_update_status)
 
-        if self.experiment == "Label Flipping Attack Feasibility":
-            script = "label_flipping_attack.py"
-        elif self.experiment == "Attack Timing in Label Flipping Attacks":
-            script = "attack_timing.py"
-            self.num_of_exp = 1
-        elif self.experiment == "Malicious Participant Availability":
-            script = "malicious_participant_availability.py"
-
+        script = "generate_data_distribution.py"
         self.manager.run_script(script)
-        
+
 
 class GeneralJob(QWidget):
     def __init__(self, main_panel):
@@ -112,8 +105,13 @@ class GeneralJob(QWidget):
         main_job_layout = QGridLayout()
         main_job.setLayout(main_job_layout)
 
+        progress_box = QHBoxLayout()
+        self.current_action = QLabel()
+        self.current_action.setText('Generating dataset distribution.....')
+        progress_box.addWidget(self.current_action)
         self.progress = QProgressBar()
         self.progress.setRange(0, 100)
+        progress_box.addWidget(self.progress)
 
         self.text = QPlainTextEdit()
         self.text.setReadOnly(True)
@@ -128,7 +126,7 @@ class GeneralJob(QWidget):
         self.btn_cancel.pressed.connect(self.cancel)
         self.right_box.addWidget(self.btn_cancel)
 
-        main_job_layout.addWidget(self.progress, 0, 0, 1, 5)
+        main_job_layout.addLayout(progress_box, 0, 0, 1, 5)
         main_job_layout.addWidget(self.text, 1, 0, 1, 1)
         main_job_layout.addLayout(self.right_box, 1, 1, 1, 1)
 
@@ -139,7 +137,36 @@ class GeneralJob(QWidget):
         self.layout.setCurrentIndex(0)
 
     @pyqtSlot()
+    def generate_data_distribution_initialize(self):
+        pass
+    
+    @pyqtSlot(str)
+    def generate_data_distribution_update_status(self, status):
+        print(status)
+        self.text.appendPlainText(status)
+
+    @pyqtSlot(int, QProcess.ExitStatus)
+    def generate_data_distribution_complete(self, exitCode, exitStatus):
+        if exitStatus == 0:
+            self.generate_default_models()
+
+    @pyqtSlot()
+    def generate_default_models_initialize(self):
+        self.current_action.setText("Generating default models......")
+    
+    @pyqtSlot(str)
+    def generate_default_models_update_status(self, status):
+        print(status)
+        self.text.appendPlainText(status)
+
+    @pyqtSlot(int, QProcess.ExitStatus)
+    def generate_default_models_complete(self, exitCode, exitStatus):
+        if exitStatus == 0:
+            self.run_experiment()
+
+    @pyqtSlot()
     def initialize(self):
+        self.current_action.setText("Running experiment......")
         self.progress.setValue(0)
         self.timer.start()
     
@@ -161,6 +188,36 @@ class GeneralJob(QWidget):
             self.status = "complete"
             self.individual_job.complete_all_clients()
 
+    def generate_default_models(self):
+        exec_dir = f"algorithms/DataPoisoning_FL"
+        return_path = "../../"
+        self.manager = ProcessManager(exec_dir, return_path)
+        self.manager.started.connect(self.generate_default_models_initialize)
+        self.manager.finished.connect(self.generate_default_models_complete)
+        self.manager.textChanged.connect(self.generate_default_models_update_status)
+
+        script = "generate_default_models.py"
+        self.manager.run_script(script)
+    
+    def run_experiment(self):
+        exec_dir = f"algorithms/DataPoisoning_FL"
+        return_path = "../../"
+        self.manager = ProcessManager(exec_dir, return_path)
+        self.manager.started.connect(self.initialize)
+        self.manager.finished.connect(self.complete)
+        self.manager.textChanged.connect(self.update_status)
+
+        experiment = self.main_panel.parameters.experiment
+        if experiment == "Label Flipping Attack Feasibility":
+            script = "label_flipping_attack.py"
+        elif experiment == "Attack Timing in Label Flipping Attacks":
+            script = "attack_timing.py"
+            self.num_of_exp = 1
+        elif experiment == "Malicious Participant Availability":
+            script = "malicious_participant_availability.py"
+
+        self.manager.run_script(script)
+
     def extra_action(self):
         if self.status == "running":
             self.layout.setCurrentIndex(1)
@@ -171,6 +228,8 @@ class GeneralJob(QWidget):
     def cancel(self):
         if self.main_panel.parameters.manager:
             self.main_panel.parameters.manager.stop()
+        if self.manager:
+            self.manager.stop()
         self.reset()
 
         self.main_panel.switch_current_job_display(0)
@@ -186,6 +245,7 @@ class GeneralJob(QWidget):
         self.curr_epoch = 0
         self.percentage = 0
         
+        self.current_action.setText('Generating dataset distribution.....')
         self.progress.setValue(0)
         self.right_box.addWidget(self.btn_cancel)
         self.btn_extra_action.setText("View job")
