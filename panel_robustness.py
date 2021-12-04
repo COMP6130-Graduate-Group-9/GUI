@@ -1,7 +1,7 @@
 from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import (QGroupBox, QLabel, QStackedLayout, QVBoxLayout)
 
-from robustness import backdoor, data_poisoning
+from robustness import backdoor, data_poisoning, inference
 
 class PanelRobustness(QGroupBox):
     def __init__(self, parent=None):
@@ -9,7 +9,8 @@ class PanelRobustness(QGroupBox):
 
         self.type_index = {
             "Backdoor Attack": 0,
-            "Data Poisoning Attacks": 1
+            "Data Poisoning Attacks": 1,
+            "Inference Attacks": 2
         }
 
         titleLabel = QLabel("Robustness")
@@ -23,8 +24,10 @@ class PanelRobustness(QGroupBox):
         self.type_switcher = QStackedLayout()
         backdoor_container = backdoor.Container()
         data_poisoning_container = data_poisoning.Container()
+        inference_container = inference.Container()
         self.type_switcher.addWidget(backdoor_container)
         self.type_switcher.addWidget(data_poisoning_container)
+        self.type_switcher.addWidget(inference_container)
         self.type_switcher.setCurrentIndex(0)
         
         layout.addWidget(titleLabel)
