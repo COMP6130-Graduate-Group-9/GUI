@@ -1,6 +1,8 @@
+import os
 import re
-from PyQt5.QtCore import QProcess, pyqtSlot
-from PyQt5.QtWidgets import QComboBox, QDoubleSpinBox, QGridLayout, QHBoxLayout, QLabel, QPlainTextEdit, QProgressBar, QPushButton, QSizePolicy, QSpinBox, QStackedLayout, QVBoxLayout, QWidget
+import time
+from PyQt5.QtCore import QPoint, QProcess, QRect, pyqtSlot
+from PyQt5.QtWidgets import QComboBox, QDoubleSpinBox, QGridLayout, QHBoxLayout, QLabel, QPlainTextEdit, QProgressBar, QPushButton, QSizePolicy, QSpinBox, QStackedLayout, QTableWidget, QTableWidgetItem, QToolTip, QVBoxLayout, QWidget
 
 from util.process_manager import ProcessManager
 from util.timer import Timer
@@ -233,11 +235,8 @@ class GeneralJob(QWidget):
             self.btn_cancel.setParent(None)
             self.btn_view_results.setEnabled(True)
 
-            # self.main_panel.results_container.elapsed_time = self.timer.elapsed_time
-            # self.main_panel.results_container.rec_loss = self.rec_loss
-            # self.main_panel.results_container.ground_truth_filename = self.ground_truth_filename
-            # self.main_panel.results_container.output_filename = self.output_filename
-            # self.main_panel.results_container.populate_content()
+            self.main_panel.results.get_latest_elapsed_time()
+            self.main_panel.results.populate_content()
 
     def view_results(self):
         self.main_panel.switch_current_job_display(2)
@@ -259,15 +258,114 @@ class GeneralJob(QWidget):
 
     def track_global_result(self, status):
         re_iteration = re.findall(r'\s+e\s+(\d+)\s+', status)
-        re_rec_loss = re.findall(r'Rec. loss: ([0-9]*[.]?[0-9]+)', status)
+        re_val_loss = re.findall(r'val loss ([0-9]*[.]?[0-9]+)', status)
+        re_val_acc = re.findall(r'best val_acc ([0-9]*[.]?[0-9]+)', status)
+        re_test_acc = re.findall(r'te_acc ([0-9]*[.]?[0-9]+)', status)
         if len(re_iteration) > 0:
             percentage = int(re_iteration[0]) / self.main_panel.parameters.epoch * 100
             self.progress.setValue(percentage)
-        if len(re_rec_loss) > 0:
-            self.main_panel.results.rec_loss = re_rec_loss[0]
+        if len(re_val_loss) > 0:
+            self.main_panel.results.val_loss = re_val_loss[0]
+        if len(re_val_acc) > 0:
+            self.main_panel.results.val_acc = re_val_acc[0]
+        if len(re_test_acc) > 0:
+            self.main_panel.results.test_acc = re_test_acc[0]
+        
 
 class Results(QWidget):
     def __init__(self, main_panel):
         super().__init__()
 
         self.main_panel = main_panel
+
+        self.val_loss = None
+        self.val_acc = None
+        self.test_acc = None
+
+        layout = QGridLayout()
+        self.setLayout(layout)
+
+        numerical_result_box = QVBoxLayout()
+        self.val_loss_display = QLabel()
+        numerical_result_box.addWidget(self.val_loss_display)
+        self.val_acc_display = QLabel()
+        numerical_result_box.addWidget(self.val_acc_display)
+        self.test_acc_display = QLabel()
+        numerical_result_box.addWidget(self.test_acc_display)
+        self.elapsed_time_display = QLabel()
+        numerical_result_box.addWidget(self.elapsed_time_display)
+
+        table = QTableWidget(self)
+        table.setColumnCount(2)
+        table.setRowCount(6)
+        sizePolicy = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Preferred)
+        table.setSizePolicy(sizePolicy)
+
+        self.parameters = {
+            'Dataset': "CIFAR10",
+            'Gradient of benign client known': self.main_panel.parameters.benign_known,
+            'Aggregation model': self.main_panel.parameters.aggregation,
+            'Attack': self.main_panel.parameters.attack,
+            'Epoch': self.main_panel.parameters.epoch,
+            'Learning rate': self.main_panel.parameters.learning_rate,
+        }
+
+        for idx, val in enumerate(self.parameters.items()):
+            table.setItem(idx, 0, QTableWidgetItem(val[0]))
+            table.setItem(idx, 1, QTableWidgetItem(str(val[1])))
+
+        table.resizeColumnsToContents()
+        table.resizeRowsToContents()
+
+        self.btn_save_results = QPushButton("Save results")
+        self.btn_save_results.clicked.connect(self.save_results)
+        btn_restart = QPushButton("Restart")
+        btn_restart.clicked.connect(self.return_to_parameters)
+
+        layout.addLayout(numerical_result_box, 0, 0, 1, 1)
+        layout.addWidget(table, 0, 1, 1, 1)
+        layout.addWidget(self.btn_save_results, 1, 0, 1, 1)
+        layout.addWidget(btn_restart, 1, 1, 1, 1)
+
+    def populate_content(self):
+        if self.val_loss:
+            self.val_loss_display.setText(f"Validation loss: {float(self.val_loss):.4f}")
+        if self.val_acc:
+            self.val_acc_display.setText(f"Validation accuracy: {float(self.val_acc):.4f}")
+        if self.test_acc:
+            self.test_acc_display.setText(f"Test accuracy: {float(self.test_acc):.4f}")
+
+    def get_latest_elapsed_time(self):
+        self.elapsed_time = self.main_panel.general_job.timer.elapsed_time
+        self.elapsed_time_display.setText(f"Elapsed time: {self.elapsed_time}")
+
+    def save_results(self):
+        logs_path = os.path.join(os.getcwd(), 'logs')
+        if not os.path.exists(logs_path):
+            os.mkdir(logs_path)
+
+        lines = [
+            'Result',
+            f'Validation loss: {self.val_loss}',
+            f'Validation accuracy: {self.val_acc}',
+            f'Test accuracy: {self.test_acc}',
+            f'Elapsed time: {self.elapsed_time}',
+            '',
+            'Parameters'
+        ]
+        lines += [f'{p[0]}: {p[1]}' for p in self.parameters.items()]
+        t = time.localtime()
+        current_time = time.strftime("%m-%d-%Y_%H-%M-%S", t)
+        filename = f'robustness-model-poisoning-{self.main_panel.parameters.attack}-{self.main_panel.parameters.aggregation}-{current_time}.txt'
+        file_path = os.path.join(logs_path, filename)
+        with open(file_path, 'w') as f:
+            f.write('\n'.join(lines))
+
+        QToolTip.showText(self.btn_save_results.mapToGlobal(QPoint(0,0)), f'File saved to {file_path}', self.btn_save_results, QRect(), 1000)
+    
+    def return_to_parameters(self):
+        if self.main_panel.parameters.manager:
+            self.main_panel.parameters.manager.stop()
+        self.main_panel.general_job.reset()
+
+        self.main_panel.switch_current_job_display(0)
