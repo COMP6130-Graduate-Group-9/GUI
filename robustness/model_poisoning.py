@@ -38,7 +38,7 @@ class Parameters(QWidget):
         self.benign_known = "unknown"
         self.aggregation = "bulyan"
         self.attack = "fang"
-        self.epoch = 1200
+        self.epoch = 100
         self.learning_rate = 0.5
 
         grid = QGridLayout()
