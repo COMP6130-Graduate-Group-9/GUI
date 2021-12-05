@@ -91,6 +91,7 @@ class GeneralJob(QWidget):
         super().__init__()
 
         self.main_panel = main_panel
+        self.manager = None
 
         self.status = "running"
         self.curr_num_of_exp = 1
