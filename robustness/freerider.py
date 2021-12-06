@@ -318,22 +318,16 @@ class GeneralJob(QWidget):
         self.right_box.addWidget(self.btn_cancel)
 
     def track_progress(self, status):
-        re_epoch = re.findall(r'Training epoch #(\d+) on client #(\d+)', status)
-        if len(re_epoch) > 0:
-            epoch, self.curr_client = int(re_epoch[0][0]), int(re_epoch[0][1])
-            if epoch == 1 and self.curr_epoch == 10:
-                self.curr_num_of_exp += 1
-            self.curr_epoch = epoch
-            self.percentage = (self.curr_epoch / 10 + self.curr_num_of_exp - 1) * 100 / self.main_panel.parameters.num_of_exp
-            self.progress.setValue(self.percentage)
-
-    def track_client(self, status):
-        re_losses = re.findall(r'\[(\d+),\s+100\] loss: ([0-9]*[.]?[0-9]+)', status)
-        if len(re_losses) > 0:
-            loss = float(re_losses[0][1])
-            client_name = f"Client {self.curr_client}"
-            if client_name in self.individual_job.clients:
-                self.individual_job.clients[client_name].update(self.percentage, loss)
+        re_iter = re.findall(r'n_iter: (\d+)', status)
+        re_progress = re.findall(r'====> i: (\d+) Loss: ([0-9]*[.]?[0-9]+e?[-+]?[\d]+) Server Test Accuracy: ([0-9]*[.]?[0-9]+)', status)
+        if len(re_iter) > 0:
+            self.total_iter = int(re_iter[0])
+        if len(re_progress) > 0:
+            curr_iter, loss, accuracy = int(re_progress[0][0]), float(re_progress[0][1]), float(re_progress[0][2])
+            self.main_panel.results.record_loss(loss)
+            self.main_panel.results.record_accuracy(accuracy)
+            percentage = curr_iter / self.total_iter * 100
+            self.progress.setValue(percentage)
 
     def track_global_result(self, status):
         re_accuracy = re.findall(r'Test set: Accuracy: \d+/\d+ \((\d+)%\)', status)
@@ -406,11 +400,11 @@ class Results(QWidget):
 
     def record_accuracy(self, accuracy):
         self.accuracy = accuracy
-        self.accuracy_display.setText(f"Accuracy: {float(self.accuracy):.4f}")
+        self.accuracy_display.setText(f"Accuracy: {float(self.accuracy)}")
 
     def record_loss(self, loss):
         self.loss = loss
-        self.loss_display.setText(f"Loss: {float(self.loss):.2f}")
+        self.loss_display.setText(f"Loss: {float(self.loss)}")
 
     def get_latest_elapsed_time(self):
         self.elapsed_time = self.main_panel.general_job.timer.elapsed_time
@@ -432,7 +426,7 @@ class Results(QWidget):
         lines += [f'{p[0]}: {p[1]}' for p in self.parameters.items()]
         t = time.localtime()
         current_time = time.strftime("%m-%d-%Y_%H-%M-%S", t)
-        filename = f'robustness-data-poisoning-exp_{self.main_panel.parameters.experiment}-{current_time}.txt'
+        filename = f'robustness-freerider-{current_time}.txt'
         file_path = os.path.join(logs_path, filename)
         with open(file_path, 'w') as f:
             f.write('\n'.join(lines))
