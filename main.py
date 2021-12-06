@@ -56,6 +56,7 @@ class MainWindow(QDialog):
                 "Backdoor Attack",
                 "Data Poisoning Attacks",
                 "Model Poisoning Attacks",
+                "Free-rider Attacks",
                 "Inference Attacks"
             ]
         )
