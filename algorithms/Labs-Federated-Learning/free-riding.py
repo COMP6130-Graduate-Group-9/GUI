@@ -87,6 +87,7 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 
 
 n_iter = get_n_iter(args.dataset, args.epochs, args.n_freeriders)
+print(f'n_iter: {n_iter}')
 if args.simple_experiment:
     n_iter = 50
 

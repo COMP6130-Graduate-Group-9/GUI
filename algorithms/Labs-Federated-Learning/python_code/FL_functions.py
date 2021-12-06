@@ -217,7 +217,7 @@ def FedProx(
 
     server_loss = sum([weights[i] * loss_hist[-1][i] for i in range(len(weights))])
     server_acc = sum([weights[i] * acc_hist[-1][i] for i in range(len(weights))])
-    print(f"====> i: 0 Loss: {server_loss} Server Test Accuracy: {server_acc}")
+    print(f"====> i: 0 Loss: {server_loss} Server Test Accuracy: {server_acc}", flush=True)
 
     for i in range(n_iter):
 
@@ -263,7 +263,7 @@ def FedProx(
         server_loss = sum([weights[i] * loss_hist[-1][i] for i in range(len(weights))])
         server_acc = sum([weights[i] * acc_hist[-1][i] for i in range(len(weights))])
 
-        print(f"====> i: {i+1} Loss: {server_loss} Server Test Accuracy: {server_acc}")
+        print(f"====> i: {i+1} Loss: {server_loss} Server Test Accuracy: {server_acc}", flush=True)
 
         server_hist.append(
             [

@@ -148,7 +148,7 @@ def FL_freeloader(
     server_acc = sum(
         [weight * acc_hist[-1][idx] for idx, weight in enumerate(weights_fair)]
     )
-    print(f"====> i: 0 Loss: {server_loss} Server Test Accuracy: {server_acc}")
+    print(f"====> i: 0 Loss: {server_loss} Server Test Accuracy: {server_acc}", flush=True)
 
     for i in range(n_iter):
 
@@ -219,7 +219,7 @@ def FL_freeloader(
             [weight * acc_hist[-1][idx] for idx, weight in enumerate(weights_fair)]
         )
 
-        print(f"====> i: {i+1} Loss: {server_loss} Accuracy: {server_acc}")
+        print(f"====> i: {i+1} Loss: {server_loss} Accuracy: {server_acc}", flush=True)
 
         m_previous = deepcopy(global_model)
         global_model = new_model
