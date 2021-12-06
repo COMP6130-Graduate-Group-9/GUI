@@ -10,12 +10,12 @@ n_clients = 5
 
 # In[2]:
 # OPEN THE FILES CREATED BY LEAF
-file_train = "all_data_niid_1_keep_3000_train_8.json"
-file_test = "all_data_niid_1_keep_3000_test_8.json"
+file_train = "all_data_niid_2_keep_0_train_8.json"
+file_test = "all_data_niid_2_keep_0_test_8.json"
 
-with open(f"data/train/{file_train}") as json_file:
+with open(file_train) as json_file:
     data_train = json.load(json_file)
-with open(f"data/test/{file_test}") as json_file:
+with open(file_test) as json_file:
     data_test = json.load(json_file)
 
 
