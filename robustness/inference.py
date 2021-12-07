@@ -60,13 +60,13 @@ class Parameters(QWidget):
         task_input.currentTextChanged.connect(self.task_text_changed)
         curr_task_idx = task_input.findData(self.task)
         task_input.setCurrentIndex(curr_task_idx)
-        task_label = QLabel("Task:")
+        task_label = QLabel("Method:")
         task_label.setBuddy(task_input)
         task_box.addWidget(task_label)
         task_box.addWidget(task_input)
 
         running_times_box = QHBoxLayout()
-        running_times_input = QDoubleSpinBox()
+        running_times_input = QSpinBox()
         running_times_input.setValue(self.running_times)
         running_times_input.valueChanged.connect(lambda i: self.value_changed(i, "running_times"))
         running_times_label = QLabel("Running times:")
@@ -224,8 +224,11 @@ class GeneralJob(QWidget):
         if self.main_panel.parameters.task == "ESA":            
             if (status.find('Attack trial') != -1):
                 self.step = self.step + 1
-        else:
+        elif self.main_panel.parameters.task == "GRNA":
             if (status.find('Running count:') != -1):
+                self.step = self.step + 1
+        elif self.main_panel.parameters.task == "PSA":            
+            if (status.find('Attack trial') != -1):
                 self.step = self.step + 1
         count = self.main_panel.parameters.running_times
         if int(self.step) > 0:
@@ -262,7 +265,7 @@ class Results(QWidget):
         sample3_box.addWidget(self.sample3_label)
 
         self.parameters = {
-            'Dataset': main_panel.parameters.task,
+            'Method': main_panel.parameters.task,
             'Running times': main_panel.parameters.running_times,
             'Total epochs': main_panel.parameters.epochs
         }
