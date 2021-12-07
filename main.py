@@ -57,7 +57,8 @@ class MainWindow(QDialog):
                 "Data Poisoning Attacks",
                 "Model Poisoning Attacks",
                 "Free-rider Attacks",
-                "Inference Attacks"
+                "Inference Attacks",
+                "Sybil Robustness"
             ]
         )
         robustnessComboBox.currentTextChanged.connect(self.panelRobustness.switch_type)
