@@ -38,8 +38,8 @@ class Parameters(QWidget):
         self.main_panel = main_panel
 
         self.task = "ESA"
-        self.running_times = 5
-        self.epochs = 5
+        self.running_times = 10
+        self.epochs = 50
         self.inference_label = None
 
         task_list = [
