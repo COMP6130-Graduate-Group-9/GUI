@@ -1,0 +1,25 @@
+backdoor: true
+backdoor_dynamic_position: false
+backdoor_label: 8
+batch_size: 64
+decay: 0.0005
+epochs: 5
+log: true
+log_interval: 100
+loss_balance: MGDA
+loss_tasks:
+- backdoor
+- normal
+lr: 0.01
+mgda_normalize: loss
+momentum: 0.9
+optimizer: SGD
+poisoning_proportion: 1.0
+save_model: false
+save_on_epochs: []
+scheduler: false
+synthesizer: Pattern
+task: MNIST
+tb: true
+test_batch_size: 100
+transform_train: true
