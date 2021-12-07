@@ -158,7 +158,7 @@ def non_iid(model_names, numClasses, numParams, softmax_test, iterations=3000,
             train_progress.append(test_error)
 
             if i % 100 == 0:
-                print("Validation error: %.5f" % test_error)
+                print("Validation error: %.5f" % test_error, flush=True)
             
 
     print("Done iterations!")
