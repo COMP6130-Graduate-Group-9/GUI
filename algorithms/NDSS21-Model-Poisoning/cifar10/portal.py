@@ -6079,7 +6079,7 @@ def lie_trmean_known_benign(nepochs=1200, fed_lr=0.5):
 
             epoch_num+=1
 
-def agr_tailored_known_benign(nepochs=1200, fed_lr=0.5):
+def agr_tailored_trmean_known_benign(nepochs=1200, fed_lr=0.5):
     def our_attack_trmean(all_updates, model_re, n_attackers, dev_type='unit_vec'):
 
         if dev_type == 'unit_vec':
