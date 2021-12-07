@@ -50,6 +50,7 @@ class Experiment(PanelFairness):
         
         self.p = None     
         self.rounds = 0
+        self.stage = ''
         
         self.text = QPlainTextEdit()
         self.text.setReadOnly(True)        
@@ -139,6 +140,7 @@ class Experiment(PanelFairness):
     
     def generate_dataset(self):
         if self.p is None:  # No process running.
+            self.stage = "generate"
             if (str(Path(__file__).absolute()).find('utils') != -1):
                 os.chdir("../../..")
             self.message("Executing process")
@@ -154,6 +156,7 @@ class Experiment(PanelFairness):
     
     def run_experiment(self):
         if self.p is None:  # No process running.
+            self.stage = "run"
             self.rounds = 0
             if (str(Path(__file__).absolute()).find('utils') != -1):
                 os.chdir("../../..")
@@ -174,6 +177,8 @@ class Experiment(PanelFairness):
     
     def message(self, s):
         self.text.appendPlainText(s)
+        if (self.stage == "generate"):
+            return
         if (s.find('%') != -1):
             percentages = s.splitlines()
             for percent in percentages:
