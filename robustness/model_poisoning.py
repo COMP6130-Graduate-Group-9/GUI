@@ -220,6 +220,8 @@ class GeneralJob(QWidget):
     def initialize(self):
         self.progress.setValue(0)
         self.timer.start()
+
+        self.main_panel.results.create_table()
     
     @pyqtSlot(str)
     def update_status(self, status):
@@ -282,8 +284,8 @@ class Results(QWidget):
         self.val_acc = None
         self.test_acc = None
 
-        layout = QGridLayout()
-        self.setLayout(layout)
+        self.layout = QGridLayout()
+        self.setLayout(self.layout)
 
         numerical_result_box = QVBoxLayout()
         self.val_loss_display = QLabel()
@@ -322,11 +324,36 @@ class Results(QWidget):
         btn_restart = QPushButton("Restart")
         btn_restart.clicked.connect(self.return_to_parameters)
 
-        layout.addLayout(numerical_result_box, 0, 0, 1, 1)
-        layout.addWidget(table, 0, 1, 1, 1)
-        layout.addWidget(self.btn_save_results, 1, 0, 1, 1)
-        layout.addWidget(btn_restart, 1, 1, 1, 1)
+        self.layout.addLayout(numerical_result_box, 0, 0, 1, 1)
+        self.layout.addWidget(self.btn_save_results, 1, 0, 1, 1)
+        self.layout.addWidget(btn_restart, 1, 1, 1, 1)
 
+    def create_table(self):
+        table = QTableWidget(self)
+        table.setColumnCount(2)
+        table.setRowCount(6)
+        sizePolicy = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Preferred)
+        table.setSizePolicy(sizePolicy)
+
+        self.parameters = {
+            'Dataset': "CIFAR10",
+            'Gradient of benign client known': self.main_panel.parameters.benign_known,
+            'Aggregation model': self.main_panel.parameters.aggregation,
+            'Attack': self.main_panel.parameters.attack,
+            'Epoch': self.main_panel.parameters.epoch,
+            'Learning rate': self.main_panel.parameters.learning_rate,
+        }
+
+        for idx, val in enumerate(self.parameters.items()):
+            table.setItem(idx, 0, QTableWidgetItem(val[0]))
+            table.setItem(idx, 1, QTableWidgetItem(str(val[1])))
+
+        table.resizeColumnsToContents()
+        table.resizeRowsToContents()
+
+        self.layout.addWidget(table, 0, 1, 1, 1)
+
+    
     def populate_content(self):
         if self.val_loss:
             self.val_loss_display.setText(f"Validation loss: {float(self.val_loss):.4f}")

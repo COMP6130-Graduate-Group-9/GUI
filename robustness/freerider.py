@@ -240,7 +240,7 @@ class GeneralJob(QWidget):
 
     @pyqtSlot()
     def generate_dataset_initialize(self):
-        pass
+        self.main_panel.results.create_table()
 
     @pyqtSlot(str)
     def generate_dataset_update_status(self, status):
@@ -350,8 +350,8 @@ class Results(QWidget):
         self.loss = 0
         self.elapsed_time = ""
 
-        layout = QGridLayout()
-        self.setLayout(layout)
+        self.layout = QGridLayout()
+        self.setLayout(self.layout)
 
         numerical_result_box = QVBoxLayout()
         self.accuracy_display = QLabel()
@@ -361,6 +361,17 @@ class Results(QWidget):
         self.elapsed_time_display = QLabel()
         numerical_result_box.addWidget(self.elapsed_time_display)
 
+
+        self.btn_save_results = QPushButton("Save results")
+        self.btn_save_results.clicked.connect(self.save_results)
+        btn_restart = QPushButton("Restart")
+        btn_restart.clicked.connect(self.return_to_parameters)
+
+        self.layout.addLayout(numerical_result_box, 0, 0, 1, 1)
+        self.layout.addWidget(self.btn_save_results, 1, 0, 1, 1)
+        self.layout.addWidget(btn_restart, 1, 1, 1, 1)
+
+    def create_table(self):
         table = QTableWidget(self)
         table.setColumnCount(2)
         table.setRowCount(8)
@@ -388,16 +399,8 @@ class Results(QWidget):
         table.resizeColumnsToContents()
         table.resizeRowsToContents()
 
-        self.btn_save_results = QPushButton("Save results")
-        self.btn_save_results.clicked.connect(self.save_results)
-        btn_restart = QPushButton("Restart")
-        btn_restart.clicked.connect(self.return_to_parameters)
-
-        layout.addLayout(numerical_result_box, 0, 0, 1, 1)
-        layout.addWidget(table, 0, 1, 1, 1)
-        layout.addWidget(self.btn_save_results, 1, 0, 1, 1)
-        layout.addWidget(btn_restart, 1, 1, 1, 1)
-
+        self.layout.addWidget(table, 0, 1, 1, 1)
+    
     def record_accuracy(self, accuracy):
         self.accuracy = accuracy
         self.accuracy_display.setText(f"Accuracy: {float(self.accuracy)}")
